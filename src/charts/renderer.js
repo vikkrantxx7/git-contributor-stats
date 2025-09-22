@@ -6,25 +6,28 @@ import path from 'path';
 import { ensureDir } from '../utils/files.js';
 import { generateBarChartSVG, generateHeatmapSVG } from './svg.js';
 
-// Dynamic import of ChartJS dependencies
+// Lazy-load chart libs to avoid top-level await (CJS build compatibility)
 let ChartJSNodeCanvas, registerables;
-try {
-  ({ ChartJSNodeCanvas } = await import('chartjs-node-canvas'));
-  ({ registerables } = await import('chart.js'));
-} catch (e) {
-  ChartJSNodeCanvas = null;
-  registerables = null;
-  if (process.env.NODE_ENV !== 'production') {
-    console.error('[warn] chartjs-node-canvas not available, using fallback SVG generation.');
+let chartLibInitialized = false;
+async function ensureChartLib() {
+  if (chartLibInitialized) return;
+  chartLibInitialized = true;
+  try {
+    const modCanvas = await import('chartjs-node-canvas');
+    ChartJSNodeCanvas = modCanvas.ChartJSNodeCanvas;
+    const modChart = await import('chart.js');
+    registerables = modChart.registerables;
+  } catch (e) {
+    ChartJSNodeCanvas = null;
+    registerables = null;
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[warn] chartjs-node-canvas not available, using fallback SVG generation.');
+    }
   }
 }
 
 /**
  * Create ChartJS canvas instance
- * @param {string} format - 'svg' or 'png'
- * @param {number} width
- * @param {number} height
- * @returns {object} Canvas instance
  */
 function createCanvas(format, width, height) {
   const type = format === 'svg' ? 'svg' : 'png';
@@ -40,15 +43,6 @@ function createCanvas(format, width, height) {
   });
 }
 
-/**
- * Render bar chart to file
- * @param {string} format - Output format ('svg' or 'png')
- * @param {string} title - Chart title
- * @param {string[]} labels - Bar labels
- * @param {number[]} values - Bar values
- * @param {string} filePath - Output file path
- * @param {object} options - Rendering options
- */
 export async function renderBarChartImage(format, title, labels, values, filePath, options = {}) {
   const width = options.width || 900;
   const height = options.height || 400;
@@ -67,7 +61,12 @@ export async function renderBarChartImage(format, title, labels, values, filePat
       values = [0];
     }
 
-    // Use fallback SVG generation for SVG format or when ChartJSNodeCanvas is unavailable
+    // For PNG, ensure ChartJS is loaded
+    if (format !== 'svg') {
+      await ensureChartLib();
+    }
+
+    // Fallback to SVG when library unavailable or format is svg
     if (!ChartJSNodeCanvas || format === 'svg') {
       const svg = generateBarChartSVG(title, labels, values, { limit: options.limit || 25 });
       fs.writeFileSync(filePath, svg, 'utf8');
@@ -115,13 +114,6 @@ export async function renderBarChartImage(format, title, labels, values, filePat
   }
 }
 
-/**
- * Render heatmap to file
- * @param {string} format - Output format ('svg' or 'png')
- * @param {number[][]} heatmap - 2D heatmap data
- * @param {string} filePath - Output file path
- * @param {object} options - Rendering options
- */
 export async function renderHeatmapImage(format, heatmap, filePath, options = {}) {
   const width = options.width || 900;
   const height = options.height || 220;
@@ -134,13 +126,17 @@ export async function renderHeatmapImage(format, heatmap, filePath, options = {}
   }
 
   try {
-    // Ensure heatmap data is valid
     if (!heatmap || !Array.isArray(heatmap) || heatmap.length === 0) {
       if (options.verbose) console.error(`[warn] Invalid heatmap data, creating empty heatmap`);
       heatmap = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
     }
 
-    // Use fallback SVG generation for SVG format or when ChartJSNodeCanvas is unavailable
+    // For PNG, ensure ChartJS is loaded
+    if (format !== 'svg') {
+      await ensureChartLib();
+    }
+
+    // Fallback to SVG when library unavailable or format is svg
     if (!ChartJSNodeCanvas || format === 'svg') {
       const svg = generateHeatmapSVG(heatmap);
       fs.writeFileSync(filePath, svg, 'utf8');
