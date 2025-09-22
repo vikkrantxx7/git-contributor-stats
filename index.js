@@ -733,14 +733,21 @@ function generateHTMLReport(data, repoRoot, opts = {}) {
 // PNG/SVG Chart Generation with chartjs-node-canvas
 // =====================
 let ChartJSNodeCanvas, registerables;
-try {
-  ({ ChartJSNodeCanvas } = await import('chartjs-node-canvas'));
-  ({ registerables } = await import('chart.js'));
-} catch (e) {
-  ChartJSNodeCanvas = null;
-  registerables = null;
-  if (process.env.NODE_ENV !== 'production') {
-    console.error('[warn] chartjs-node-canvas not available, using fallback SVG generation.');
+let chartLibInitialized = false;
+async function ensureChartLib() {
+  if (chartLibInitialized) return;
+  chartLibInitialized = true;
+  try {
+    const modCanvas = await import('chartjs-node-canvas');
+    ChartJSNodeCanvas = modCanvas.ChartJSNodeCanvas;
+    const modChart = await import('chart.js');
+    registerables = modChart.registerables;
+  } catch (e) {
+    ChartJSNodeCanvas = null;
+    registerables = null;
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('[warn] chartjs-node-canvas not available, using fallback SVG generation.');
+    }
   }
 }
 
@@ -774,7 +781,11 @@ async function renderBarChartImage(format, title, labels, values, filePath, opti
       values = [0];
     }
 
-    // Use fallback SVG generation for SVG format or when ChartJSNodeCanvas is unavailable
+    if (format !== 'svg') {
+      await ensureChartLib();
+    }
+
+    // If ChartJSNodeCanvas is not available, go straight to fallback
     if (!ChartJSNodeCanvas || format === 'svg') {
       const svg = generateBarChartSVG(title, labels, values, { limit: options.limit || 25 });
       fs.writeFileSync(filePath, svg, 'utf8');
@@ -821,13 +832,16 @@ async function renderHeatmapImage(format, heatmap, filePath, options = {}) {
   }
 
   try {
-    // Ensure heatmap data is valid
     if (!heatmap || !Array.isArray(heatmap) || heatmap.length === 0) {
       if (options.verbose) console.error(`[warn] Invalid heatmap data, creating empty heatmap`);
       heatmap = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
     }
 
-    // Use fallback SVG generation for SVG format or when ChartJSNodeCanvas is unavailable
+    if (format !== 'svg') {
+      await ensureChartLib();
+    }
+
+    // If ChartJSNodeCanvas is not available, go straight to fallback
     if (!ChartJSNodeCanvas || format === 'svg') {
       const svg = generateHeatmapSVG(heatmap);
       fs.writeFileSync(filePath, svg, 'utf8');
