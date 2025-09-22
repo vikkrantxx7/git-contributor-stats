@@ -2,6 +2,8 @@
 
 A fast Node.js CLI to compute contributor and repository statistics from a Git repository: commits, lines added/deleted, top files per contributor, commit frequency, heatmap, bus-factor, and more. Filter by branch, author, timeframe, and pathspecs. Output to table, JSON, CSV, Markdown, HTML, or SVG charts.
 
+> Requirements: Node.js 18+ (ESM-only). The library build publishes only ESM (`dist/index.mjs`).
+
 ## Features
 
 - Aggregate by email or author name; sort by changes/commits/additions/deletions
@@ -46,7 +48,14 @@ npm link
 git-contributor-stats --help
 ```
 
-Note: This package is `private: true` — it's intended for local/internal use.
+## Programmatic usage (ESM-only)
+
+```js
+// Node 18+ ESM
+import { main } from 'git-contributor-stats';
+
+await main(process.argv);
+```
 
 ## Usage
 
@@ -193,9 +202,10 @@ This creates `.github/workflows/git-contributor-stats.yml` that runs the CLI on 
 
 ## Development
 
+- Node.js 18+
 - Install: `npm install`
 - Help: `npm run help`
-- Smoke: `npm test`
+- Smoke tests: `npm test`
 - Reports: `npm run report`
 
 ## License
