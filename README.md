@@ -15,7 +15,7 @@ A fast Node.js CLI to compute contributor and repository statistics from a Git r
 - Bus-factor analysis: files with a single contributor; ownership distribution
 - Total lines of code (across tracked files) — can be skipped for speed
 - Export formats: table (default), JSON (`--json`), CSV (`--csv`), Markdown (`--md`), HTML (`--html`)
-- SVG charts: top contributors (commits and net) and heatmap (`--svg`, optional `--svg-dir`)
+- Charts: top contributors (commits and net) and heatmap — use `--charts` (with `--charts-dir` and `--chart-format svg|png|both`); legacy `--svg` and `--svg-dir` are still supported
 - Convenience: write all reports to a directory via `--out-dir`
 - Optional GitHub Actions workflow generator via `--generate-workflow`
 
@@ -34,7 +34,7 @@ node index.js --top 10
 node index.js --json
 
 # Generate Markdown & HTML reports and SVG charts (skip LOC counting for speed)
-node index.js --out-dir reports --md reports/report.md --html reports/report.html --no-count-lines --svg
+node index.js --out-dir reports --md reports/report.md --html reports/report.html --no-count-lines --charts --chart-format svg
 
 # Omit the Top stats section in reports & stdout
 node index.js --out-dir reports --md reports/report-no-topstats.md --html reports/report-no-topstats.html --no-top-stats
@@ -80,13 +80,18 @@ Options:
   --md <path>               Write Markdown report to file
   --html <path>             Write HTML dashboard report to file
   --out-dir <path>          Write selected outputs into the directory (uses default filenames)
-  --svg                     Write SVG charts (top commits, net lines, heatmap) to out-dir (or ./charts)
-  --svg-dir <path>          Directory to write SVG charts (overrides default when --svg is set)
+  --charts                  Generate charts (defaults to SVG)
+  --charts-dir <path>       Directory to write charts (when --charts is set)
+  --chart-format <fmt>      Chart output format: svg | png | both (default: svg)
+  --svg                     Deprecated: write SVG charts (compat shim for --charts)
+  --svg-dir <path>          Deprecated: directory for SVG charts (compat shim)
+  --top-stats <list>        Top stats metrics to show (comma-separated): commits, additions, deletions, net, changes
+  --no-top-stats            Omit the Top stats section in Markdown/HTML and stdout table output
+  --alias-file <path>       Path to alias mapping JSON file for canonical identities
   --similarity <0..1>       Name-merge similarity threshold (default: 0.85)
   --generate-workflow       Create sample GitHub Actions workflow (.github/workflows/...)
   --no-count-lines          Skip counting total lines (faster)
-  --no-top-stats            Omit the Top stats section in Markdown/HTML and stdout table output
-  -v, --verbose             Verbose logging
+  -v, --verbose             Verbose logging (debug to stderr)
 ```
 
 ### Date inputs
@@ -95,6 +100,47 @@ Options:
 - Relative: `--since 90.days`, `--since 2.weeks`, `--since 3.months`, `--since 1.year`
 
 Relative inputs are approximate (week=7 days, month=30 days, year=365 days).
+
+### Top stats configuration
+
+You can configure which metrics to display in the “Top stats” section (Markdown/HTML and stdout table header).
+
+- Supported metrics: `commits, additions, deletions, net, changes`
+- Example: only commits and net
+
+```bash
+git-contributor-stats --top-stats commits,net --out-dir reports --md reports/report.md --html reports/report.html
+```
+
+To hide the section altogether, use `--no-top-stats`.
+
+### Charts
+
+- Use `--charts` to generate charts, with optional `--charts-dir` and `--chart-format`.
+- Formats: `svg` (default) or `png` (requires chartjs-node-canvas at runtime); `both` writes both.
+- HTML report renders client-side charts via Chart.js CDN.
+- If server-side PNG generation is unavailable, the tool falls back to SVG generation.
+- Legacy flags `--svg` and `--svg-dir` remain as compatibility shims; prefer `--charts`, `--charts-dir`, and `--chart-format`.
+
+Examples:
+
+```bash
+# Write SVG charts to a custom directory
+git-contributor-stats --charts --charts-dir ./charts --chart-format svg
+
+# Write PNG charts (requires Node canvas support via chartjs-node-canvas)
+git-contributor-stats --charts --charts-dir ./charts --chart-format png
+
+# Write both SVG and PNG
+git-contributor-stats --charts --charts-dir ./charts --chart-format both
+```
+
+### Verbose/debug logs
+
+By default, debug logging is suppressed to keep stdout clean (especially for `--json`/`--csv`).
+
+- Enable verbose mode with `-v/--verbose` or set `DEBUG=1` or `VERBOSE=1`.
+- Debug messages are written to stderr; warnings/errors always go to stderr.
 
 ## Examples
 
@@ -122,14 +168,14 @@ Relative inputs are approximate (week=7 days, month=30 days, year=365 days).
   git-contributor-stats --json
   ```
 
-- Generate CSV, Markdown, HTML, and SVG reports:
+- Generate CSV, Markdown, HTML, and charts (SVG by default):
 
   ```bash
   git-contributor-stats --out-dir reports \
     --csv reports/contributors.csv \
     --md reports/report.md \
     --html reports/report.html \
-    --svg --no-count-lines
+    --charts --chart-format svg --no-count-lines
   ```
 
 - Omit Top stats section in reports & stdout:
@@ -155,7 +201,7 @@ Relative inputs are approximate (week=7 days, month=30 days, year=365 days).
 ### Table
 
 - Columns: rank, author/email, commits, +additions, -deletions, ±changes
-- Optional “Top stats” header with five lines (omit with --no-top-stats)
+- Optional “Top stats” header with selected metrics (omit with --no-top-stats)
 - Footer total and detected date range
 
 ### JSON (comprehensive)
@@ -205,8 +251,9 @@ This creates `.github/workflows/git-contributor-stats.yml` that runs the CLI on 
 - Node.js 18+
 - Install: `npm install`
 - Help: `npm run help`
-- Smoke tests: `npm test`
-- Reports: `npm run report`
+- Tests (Vitest): `npm test`
+- Run smoke script (optional): `npm run smoke`
+- Reports (sample): `npm run report`
 
 ## License
 
