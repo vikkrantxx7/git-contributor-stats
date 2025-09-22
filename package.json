@@ -1,0 +1,49 @@
+{
+  "name": "git-contributor-stats",
+  "version": "1.0.0",
+  "description": "CLI to compute contributor and repository statistics from a Git repository (commits, lines added/deleted, frequency, heatmap, bus-factor), with filters and multiple output formats.",
+  "keywords": [
+    "git",
+    "analytics",
+    "contributors",
+    "statistics",
+    "cli",
+    "reports",
+    "charts",
+    "heatmap",
+    "bus-factor",
+    "repository-analysis"
+  ],
+  "author": {
+    "name": "Vikrant Sharma",
+    "email": "vikkrant.xx7@gmail.com"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vikkrantxx7/git-contributor-stats.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vikkrantxx7/git-contributor-stats/issues"
+  },
+  "homepage": "https://github.com/vikkrantxx7/git-contributor-stats#readme",
+  "main": "index.js",
+  "bin": {
+    "git-contributor-stats": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "help": "node index.js --help",
+    "report": "node index.js --out-dir reports --md reports/report.md --html reports/report.html --no-count-lines --svg",
+    "smoke": "node scripts/smoke.js",
+    "test": "npm run smoke"
+  },
+  "private": true,
+  "dependencies": {
+    "chart.js": "^4.5.0",
+    "chartjs-node-canvas": "^5.0.0",
+    "commander": "^14.0.1",
+    "string-similarity-js": "^2.1.4"
+  },
+  "type": "module"
+}
