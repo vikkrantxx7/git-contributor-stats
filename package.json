@@ -34,9 +34,6 @@
   },
   "files": [
     "dist/",
-    "index.js",
-    "cli.js",
-    "src/",
     "README.md",
     "LICENSE"
   ],
@@ -54,19 +51,23 @@
     "help": "node index.js --help",
     "report": "node index.js --out-dir reports --md reports/report.md --html reports/report.html --no-count-lines --svg",
     "smoke": "node scripts/smoke.js",
-    "test": "npm run smoke",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
     "build": "vite build",
     "prepublishOnly": "npm run test && npm run build"
   },
   "private": false,
   "dependencies": {
-    "chart.js": "^4.5.0",
-    "chartjs-node-canvas": "^5.0.0",
-    "commander": "^14.0.1",
-    "string-similarity-js": "^2.1.4"
+    "chart.js": "4.5.0",
+    "chartjs-node-canvas": "5.0.0",
+    "commander": "14.0.1",
+    "string-similarity-js": "2.1.4"
   },
   "type": "module",
   "devDependencies": {
-    "vite": "^7.1.7"
+    "vite": "7.1.7",
+    "vitest": "3.2.4",
+    "execa": "9.6.0"
   }
 }

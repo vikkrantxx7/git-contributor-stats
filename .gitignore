@@ -7,6 +7,9 @@ charts/
 debug-charts/
 test-charts/
 
+# Build artifacts
+dist/
+
 # Temporary files and directories
 tmp*/
 *.tmp
@@ -15,6 +18,10 @@ tmp*/
 *.log
 debug.txt
 smoke-debug.log
+
+# Test files
+help_test.txt
+test-output.csv
 
 # IDE files
 .idea/

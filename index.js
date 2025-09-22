@@ -1018,9 +1018,16 @@ async function countTotalLines(repoPath) {
 // Main CLI Execution
 // =====================
 async function main(argv) {
-  console.error('[debug] main() entry');
   const pkg = safeReadPackageJson();
   const program = new Command();
+
+  // Debug utility for controlled logging (now inside main)
+  function debugLog(...args) {
+    if (process.env.DEBUG || process.env.VERBOSE || opts.verbose) {
+      // Write debug logs to stderr to keep stdout clean for structured outputs
+      console.error('[debug]', ...args);
+    }
+  }
 
   program
     .name('git-contributor-stats')
@@ -1082,17 +1089,13 @@ async function main(argv) {
   const until = parseDateInput(opts.until);
 
   const gitArgs = buildGitLogArgs({ branch: opts.branch, since, until, author: opts.author, includeMerges: !!opts.includeMerges, paths });
-  if (opts.verbose) {
-    console.error(`[debug] repo=${repo}`);
-    if (aliasPath) console.error(`[debug] aliasFile=${aliasPath}`);
-    console.error(`[debug] git ${gitArgs.map(a => (a.includes(' ') ? `'${a}'` : a)).join(' ')}`);
-  }
+  debugLog('git args:', gitArgs);
 
   const result = runGit(repo, gitArgs);
   if (!result.ok) { console.error(result.error); process.exit(result.code || 2); }
 
   const commits = parseGitLog(result.stdout);
-  if (opts.verbose) console.error(`[debug] parsed commits: ${commits.length}`);
+  debugLog('parsed commits: %d', commits.length);
 
   // Basic aggregation for table/CSV stdout
   const groupBy = (opts.groupBy || 'email').toLowerCase() === 'name' ? 'name' : 'email';
@@ -1168,24 +1171,24 @@ async function main(argv) {
   // Charts outputs (SVG default). Support legacy --svg/--svg-dir flags.
   const chartsRequested = opts.charts || opts.svg || opts.svgDir;
   if (chartsRequested) {
-    console.error('[debug] Charts requested, starting generation...');
+    debugLog('Charts requested, starting generation...');
     const chartsDir = outDir ? outDir : (opts.chartsDir || opts.svgDir || path.join(process.cwd(), 'charts'));
-    console.error(`[debug] Charts directory: ${chartsDir}`);
+    debugLog('Charts directory:', chartsDir);
     ensureDir(chartsDir);
     const formatOpt = String(opts.chartFormat || 'svg').toLowerCase();
     const formats = formatOpt === 'both' ? ['svg', 'png'] : [formatOpt === 'png' ? 'png' : 'svg'];
-    console.error(`[debug] Chart formats: ${formats.join(', ')}`);
+    debugLog('Chart formats:', formats.join(', '));
     if ((opts.svg || opts.svgDir) && !opts.charts && !opts.chartFormat && !opts.chartsDir) {
       console.error('[warn] --svg/--svg-dir are deprecated; prefer --charts/--charts-dir/--chart-format');
     }
     const names = analysis.topContributors.map(c => c.name || '');
     const commitsVals = analysis.topContributors.map(c => c.commits || 0);
     const netVals = analysis.topContributors.map(c => (c.added || 0) - (c.deleted || 0));
-    console.error(`[debug] Contributors: ${names.length}, commits: ${commitsVals.length}, net: ${netVals.length}`);
+    debugLog('Contributors:', names.length, 'commits:', commitsVals.length, 'net:', netVals.length);
     const chartPromises = [];
     for (const fmt of formats) {
       const ext = fmt === 'svg' ? '.svg' : '.png';
-      console.error(`[debug] Rendering ${fmt} charts...`);
+      debugLog('Rendering', fmt, 'charts...');
       chartPromises.push(renderBarChartImage(fmt, 'Top contributors by commits', names, commitsVals, path.join(chartsDir, `top-commits${ext}`), { limit: 25, verbose: opts.verbose }));
       chartPromises.push(renderBarChartImage(fmt, 'Top contributors by net lines', names, netVals, path.join(chartsDir, `top-net${ext}`), { limit: 25, verbose: opts.verbose }));
       chartPromises.push(renderHeatmapImage(fmt, analysis.heatmap, path.join(chartsDir, `heatmap${ext}`), { verbose: opts.verbose }));
@@ -1201,29 +1204,29 @@ async function main(argv) {
       const svgHeat = path.join(chartsDir, 'heatmap.svg');
       try {
         if (!fs.existsSync(svgCommits)) {
-          console.error(`[debug] Fallback: writing ${svgCommits}`);
+          debugLog('Fallback: writing', svgCommits);
           fs.writeFileSync(svgCommits, generateBarChartSVG('Top contributors by commits', names, commitsVals, { limit: 25 }), 'utf8');
-          console.error(`[debug] Fallback: wrote ${svgCommits}`);
+          debugLog('Fallback: wrote', svgCommits);
         }
       } catch (e) { console.error(`[error] Fallback write failed for ${svgCommits}: ${e.message}`); }
       try {
         if (!fs.existsSync(svgNet)) {
-          console.error(`[debug] Fallback: writing ${svgNet}`);
+          debugLog('Fallback: writing', svgNet);
           fs.writeFileSync(svgNet, generateBarChartSVG('Top contributors by net lines', names, netVals, { limit: 25 }), 'utf8');
-          console.error(`[debug] Fallback: wrote ${svgNet}`);
+          debugLog('Fallback: wrote', svgNet);
         }
       } catch (e) { console.error(`[error] Fallback write failed for ${svgNet}: ${e.message}`); }
       try {
         if (!fs.existsSync(svgHeat)) {
-          console.error(`[debug] Fallback: writing ${svgHeat}`);
+          debugLog('Fallback: writing', svgHeat);
           fs.writeFileSync(svgHeat, generateHeatmapSVG(analysis.heatmap), 'utf8');
-          console.error(`[debug] Fallback: wrote ${svgHeat}`);
+          debugLog('Fallback: wrote', svgHeat);
         }
       } catch (e) { console.error(`[error] Fallback write failed for ${svgHeat}: ${e.message}`); }
     }
     console.error(`Wrote ${formats.join('+').toUpperCase()} charts to ${chartsDir}`);
   } else {
-    console.error('[debug] No charts requested');
+    debugLog('No charts requested');
   }
 
   if (opts.generateWorkflow) {
