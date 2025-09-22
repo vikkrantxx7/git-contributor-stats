@@ -2,6 +2,8 @@
  * Alias resolution and name normalization utilities
  */
 
+import { stringSimilarity } from 'string-similarity-js';
+
 /**
  * Normalize contributor name for similarity matching
  * @param {string} name
@@ -53,8 +55,6 @@ function levenshteinDistance(a, b) {
  */
 export function similarityScore(a, b) {
   try {
-    // string-similarity-js only exports stringSimilarity function
-    const { stringSimilarity } = await import('string-similarity-js');
     return stringSimilarity(a, b);
   } catch (_) {
     // Fallback to Levenshtein-based similarity
