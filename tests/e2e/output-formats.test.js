@@ -28,7 +28,7 @@ describe('Output formats (table/csv)', () => {
   });
 
   it('prints a reasonable table to stdout', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', ['index.js', '--repo', tmpRepo, '--format', 'table', '--top', '5', '--no-count-lines'], { cwd: repoRoot });
+    const { stdout, stderr, exitCode } = await execa('node', ['cli.js', '--repo', tmpRepo, '--format', 'table', '--top', '5', '--no-count-lines'], { cwd: repoRoot });
     expect(exitCode).toBe(0);
     expect(stderr).toBe('');
     expect(stdout).toMatch(/Contributors:/);
@@ -36,7 +36,7 @@ describe('Output formats (table/csv)', () => {
   });
 
   it('prints CSV to stdout', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', ['index.js', '--repo', tmpRepo, '--format', 'csv', '--top', '5', '--no-count-lines'], { cwd: repoRoot });
+    const { stdout, stderr, exitCode } = await execa('node', ['cli.js', '--repo', tmpRepo, '--format', 'csv', '--top', '5', '--no-count-lines'], { cwd: repoRoot });
     expect(exitCode).toBe(0);
     expect(stderr).toBe('');
     const lines = stdout.trim().split('\n');
@@ -49,7 +49,7 @@ describe('Output formats (table/csv)', () => {
     const csvPath = join(tmpRepo, 'out.csv');
     try { rmSync(csvPath, { force: true }); } catch {}
 
-    const { stderr, exitCode } = await execa('node', ['index.js', '--repo', tmpRepo, '--csv', csvPath, '--no-count-lines'], { cwd: repoRoot });
+    const { stderr, exitCode } = await execa('node', ['cli.js', '--repo', tmpRepo, '--csv', csvPath, '--no-count-lines'], { cwd: repoRoot });
     expect(exitCode).toBe(0);
     expect(stderr).toMatch(/Wrote CSV/i);
     expect(existsSync(csvPath)).toBe(true);
@@ -57,4 +57,3 @@ describe('Output formats (table/csv)', () => {
     expect(content.split('\n').length).toBeGreaterThanOrEqual(2);
   });
 });
-

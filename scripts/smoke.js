@@ -236,7 +236,7 @@ async function runSmokeTests() {
 
   // Test 1: CLI Help Output
   runner.test('CLI Help Output', () => {
-    const result = run('node', ['index.js', '--help'], { cwd: root, stdio: 'pipe', timeout: 10000 });
+    const result = run('node', ['cli.js', '--help'], { cwd: root, stdio: 'pipe', timeout: 10000 });
     if (!result.stdout.includes('git-contributor-stats')) {
       throw new Error('Help output should contain program name');
     }
@@ -247,7 +247,7 @@ async function runSmokeTests() {
 
   // Test 2: CLI Version
   runner.test('CLI Version', () => {
-    const result = run('node', ['index.js', '--version'], { cwd: root, stdio: 'pipe', timeout: 5000 });
+    const result = run('node', ['cli.js', '--version'], { cwd: root, stdio: 'pipe', timeout: 5000 });
     if (!result.stdout.trim().match(/^\d+\.\d+\.\d+/)) {
       throw new Error('Version output should be in semver format');
     }
@@ -264,7 +264,7 @@ async function runSmokeTests() {
 
   // Test 4: Basic JSON Output
   runner.test('Basic JSON Output', () => {
-    const result = run('node', ['index.js', '--repo', testRepo.path, '--json', '--no-count-lines'], {
+    const result = run('node', ['cli.js', '--repo', testRepo.path, '--json', '--no-count-lines'], {
       cwd: root,
       stdio: 'pipe',
       timeout: 15000
@@ -280,7 +280,7 @@ async function runSmokeTests() {
 
   // Test 5: Table Output
   runner.test('Table Output Format', () => {
-    const result = run('node', ['index.js', '--repo', testRepo.path, '--format', 'table', '--top', '5', '--no-count-lines'], {
+    const result = run('node', ['cli.js', '--repo', testRepo.path, '--format', 'table', '--top', '5', '--no-count-lines'], {
       cwd: root,
       stdio: 'pipe',
       timeout: 10000
@@ -293,7 +293,7 @@ async function runSmokeTests() {
 
   // Test 6: CSV Output
   runner.test('CSV Output Format', () => {
-    const result = run('node', ['index.js', '--repo', testRepo.path, '--format', 'csv', '--top', '5', '--no-count-lines'], {
+    const result = run('node', ['cli.js', '--repo', testRepo.path, '--format', 'csv', '--top', '5', '--no-count-lines'], {
       cwd: root,
       stdio: 'pipe',
       timeout: 10000
@@ -315,7 +315,7 @@ async function runSmokeTests() {
     const out = path.join(root, 'reports-smoke');
     try { fs.rmSync(out, { recursive: true, force: true }); } catch(_) {}
 
-    run('node', ['index.js', '--repo', testRepo.path, '--out-dir', out, '--md', path.join(out, 'report.md'), '--html', path.join(out, 'report.html'), '--no-count-lines', '--charts'], {
+    run('node', ['cli.js', '--repo', testRepo.path, '--out-dir', out, '--md', path.join(out, 'report.md'), '--html', path.join(out, 'report.html'), '--no-count-lines', '--charts'], {
       cwd: root,
       timeout: 20000
     });
@@ -347,7 +347,7 @@ async function runSmokeTests() {
     const out2 = path.join(root, 'reports-smoke-no-topstats');
     try { fs.rmSync(out2, { recursive: true, force: true }); } catch(_) {}
 
-    run('node', ['index.js', '--repo', testRepo.path, '--out-dir', out2, '--md', path.join(out2, 'report.md'), '--html', path.join(out2, 'report.html'), '--no-top-stats', '--no-count-lines'], {
+    run('node', ['cli.js', '--repo', testRepo.path, '--out-dir', out2, '--md', path.join(out2, 'report.md'), '--html', path.join(out2, 'report.html'), '--no-top-stats', '--no-count-lines'], {
       cwd: root,
       timeout: 15000
     });
@@ -361,7 +361,7 @@ async function runSmokeTests() {
     const csvPath = path.join(root, 'test-output.csv');
     try { fs.unlinkSync(csvPath); } catch(_) {}
 
-    run('node', ['index.js', '--repo', testRepo.path, '--csv', csvPath, '--no-count-lines'], {
+    run('node', ['cli.js', '--repo', testRepo.path, '--csv', csvPath, '--no-count-lines'], {
       cwd: root,
       timeout: 10000
     });
@@ -380,8 +380,7 @@ async function runSmokeTests() {
 
   // Test 11: Branch Filtering
   runner.test('Branch/Commit Range Filtering', () => {
-    // Test with HEAD~2..HEAD to limit commits
-    const result = run('node', ['index.js', '--repo', testRepo.path, '--branch', 'HEAD~1..HEAD', '--json', '--no-count-lines'], {
+    const result = run('node', ['cli.js', '--repo', testRepo.path, '--branch', 'HEAD~1..HEAD', '--json', '--no-count-lines'], {
       cwd: root,
       stdio: 'pipe',
       timeout: 10000
@@ -395,7 +394,7 @@ async function runSmokeTests() {
 
   // Test 12: Author Filtering
   runner.test('Author Filtering', () => {
-    const result = run('node', ['index.js', '--repo', testRepo.path, '--author', 'alice@example.com', '--json', '--no-count-lines'], {
+    const result = run('node', ['cli.js', '--repo', testRepo.path, '--author', 'alice@example.com', '--json', '--no-count-lines'], {
       cwd: root,
       stdio: 'pipe',
       timeout: 10000
@@ -412,7 +411,7 @@ async function runSmokeTests() {
     const chartDir = path.join(root, 'test-charts');
     try { fs.rmSync(chartDir, { recursive: true, force: true }); } catch(_) {}
 
-    run('node', ['index.js', '--repo', testRepo.path, '--charts-dir', chartDir, '--chart-format', 'svg', '--charts', '--no-count-lines'], {
+    run('node', ['cli.js', '--repo', testRepo.path, '--charts-dir', chartDir, '--chart-format', 'svg', '--charts', '--no-count-lines'], {
       cwd: root,
       timeout: 15000
     });
@@ -429,7 +428,7 @@ async function runSmokeTests() {
 
   // Test 14: Similarity Threshold
   runner.test('Similarity Threshold Processing', () => {
-    const result = run('node', ['index.js', '--repo', testRepo.path, '--similarity', '0.5', '--json', '--no-count-lines'], {
+    const result = run('node', ['cli.js', '--repo', testRepo.path, '--similarity', '0.5', '--json', '--no-count-lines'], {
       cwd: root,
       stdio: 'pipe',
       timeout: 10000
@@ -447,7 +446,7 @@ async function runSmokeTests() {
   // Test 15: Error Handling - Invalid Repository
   runner.test('Error Handling - Invalid Repository', () => {
     try {
-      run('node', ['index.js', '--repo', '/nonexistent/path', '--json'], {
+      run('node', ['cli.js', '--repo', '/nonexistent/path', '--json'], {
         cwd: root,
         stdio: 'pipe',
         timeout: 5000
@@ -462,7 +461,7 @@ async function runSmokeTests() {
 
   // Test 16: Performance Test - Large Output
   runner.test('Performance Test - Large Output', () => {
-    const result = run('node', ['index.js', '--repo', testRepo.path, '--json', '--verbose'], {
+    const result = run('node', ['cli.js', '--repo', testRepo.path, '--json', '--verbose'], {
       cwd: root,
       stdio: 'pipe',
       timeout: 25000

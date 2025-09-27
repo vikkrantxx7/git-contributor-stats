@@ -14,8 +14,8 @@ const externals = [
 export default defineConfig({
   build: {
     lib: {
-      // Programmatic entry (library surface)
-      entry: 'src/cli/index.js',
+      // Programmatic API entry (exports getContributorStats and helpers)
+      entry: 'src/index.js',
       formats: ['es'],
       fileName: () => 'index.mjs'
     },

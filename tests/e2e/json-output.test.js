@@ -26,7 +26,7 @@ describe('JSON output', () => {
   });
 
   it('produces valid JSON with expected fields', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', ['index.js', '--repo', tmpRepo, '--json', '--no-count-lines'], { cwd: repoRoot });
+    const { stdout, stderr, exitCode } = await execa('node', ['cli.js', '--repo', tmpRepo, '--json', '--no-count-lines'], { cwd: repoRoot });
     expect(exitCode).toBe(0);
     expect(stderr).toBe('');
 
@@ -43,4 +43,3 @@ describe('JSON output', () => {
     expect(data.totalCommits).toBe(count);
   });
 });
-

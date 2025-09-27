@@ -44,12 +44,12 @@
     "registry": "https://registry.npmjs.org/"
   },
   "bin": {
-    "git-contributor-stats": "index.js"
+    "git-contributor-stats": "cli.js"
   },
   "scripts": {
-    "start": "node index.js",
-    "help": "node index.js --help",
-    "report": "node index.js --out-dir reports --md reports/report.md --html reports/report.html --no-count-lines --svg",
+    "start": "node cli.js",
+    "help": "node cli.js --help",
+    "report": "node cli.js --out-dir reports --md reports/report.md --html reports/report.html --no-count-lines --charts",
     "smoke": "node scripts/smoke.js",
     "test": "vitest run",
     "test:watch": "vitest",

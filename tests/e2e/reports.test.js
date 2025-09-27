@@ -27,7 +27,7 @@ describe('Reports (MD/HTML) and charts (SVG)', () => {
     const md = join(outDir, 'report.md');
     const html = join(outDir, 'report.html');
     const { exitCode } = await execa('node', [
-      'index.js',
+      'cli.js',
       '--repo', tmpRepo,
       '--out-dir', outDir,
       '--md', md,
@@ -64,7 +64,7 @@ describe('Reports (MD/HTML) and charts (SVG)', () => {
     const noTsDir = join(outDir, 'no-topstats');
     const md = join(noTsDir, 'report.md');
     await execa('node', [
-      'index.js',
+      'cli.js',
       '--repo', tmpRepo,
       '--out-dir', noTsDir,
       '--md', md,

@@ -8,7 +8,7 @@ const repoRoot = join(__dirname, '..', '..');
 
 describe('CLI basics', () => {
   it('shows help with examples', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', ['index.js', '--help'], { cwd: repoRoot });
+    const { stdout, stderr, exitCode } = await execa('node', ['cli.js', '--help'], { cwd: repoRoot });
     expect(exitCode).toBe(0);
     expect(stderr).toBe('');
     expect(stdout).toMatch(/git-contributor-stats/i);
@@ -16,9 +16,8 @@ describe('CLI basics', () => {
   });
 
   it('prints semver on --version', async () => {
-    const { stdout, exitCode } = await execa('node', ['index.js', '--version'], { cwd: repoRoot });
+    const { stdout, exitCode } = await execa('node', ['cli.js', '--version'], { cwd: repoRoot });
     expect(exitCode).toBe(0);
-    expect(stdout.trim()).toMatch(/^\d+\.\d+\.\d+(?:[-+].*)?$/);
+    expect(stdout.trim()).toMatch(/^[0-9]+\.[0-9]+\.[0-9]+(?:[-+].*)?$/);
   });
 });
-

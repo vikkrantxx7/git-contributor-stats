@@ -31,7 +31,7 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
     const chartsDir = join(tmpRepo, 'charts-out');
     try { rmSync(chartsDir, { recursive: true, force: true }); } catch {}
     const { exitCode } = await execa('node', [
-      'index.js',
+      'cli.js',
       '--repo', tmpRepo,
       '--charts',
       '--charts-dir', chartsDir,
@@ -51,7 +51,7 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
   });
 
   it('handles similarity threshold without changing totalCommits', async () => {
-    const { stdout, exitCode } = await execa('node', ['index.js', '--repo', tmpRepo, '--similarity', '0.5', '--json', '--no-count-lines'], { cwd: repoRoot });
+    const { stdout, exitCode } = await execa('node', ['cli.js', '--repo', tmpRepo, '--similarity', '0.5', '--json', '--no-count-lines'], { cwd: repoRoot });
     expect(exitCode).toBe(0);
     const data = JSON.parse(stdout);
     const count = await getCommitCount(tmpRepo);
@@ -61,7 +61,7 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
   it('returns a friendly error on invalid repository', async () => {
     let error = null;
     try {
-      await execa('node', ['index.js', '--repo', '/definitely/not/a/repo', '--json'], { cwd: repoRoot });
+      await execa('node', ['cli.js', '--repo', '/definitely/not/a/repo', '--json'], { cwd: repoRoot });
     } catch (e) {
       error = e;
     }
@@ -70,10 +70,9 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
   });
 
   it('emits debug logs to stderr when verbose is enabled', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', ['index.js', '--repo', tmpRepo, '--json', '--verbose', '--no-count-lines'], { cwd: repoRoot });
+    const { stdout, stderr, exitCode } = await execa('node', ['cli.js', '--repo', tmpRepo, '--json', '--verbose', '--no-count-lines'], { cwd: repoRoot });
     expect(exitCode).toBe(0);
     expect(stdout.trim().startsWith('{')).toBe(true);
     expect(stderr).toMatch(/\[debug\]/);
   });
 });
-

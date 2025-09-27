@@ -45,7 +45,7 @@ export function generateMarkdownReport(data, repoRoot, opts = {}) {
       return `- **${label}:** ${who}${suffix}`;
     }
 
-    lines.push('## Top Statistics');
+    lines.push('## Top stats');
     lines.push('');
     if (want.has('commits')) lines.push(formatStatLine('Most commits', ts.byCommits, 'commits'));
     if (want.has('additions')) lines.push(formatStatLine('Most additions', ts.byAdditions, 'added'));
@@ -56,7 +56,7 @@ export function generateMarkdownReport(data, repoRoot, opts = {}) {
   }
 
   // Contributors table
-  lines.push('## Top Contributors');
+  lines.push('## Top contributors');
   lines.push('');
   lines.push('| Rank | Contributor | Commits | Added | Deleted | Net | Top Files |');
   lines.push('|---:|---|---:|---:|---:|---:|---|');
