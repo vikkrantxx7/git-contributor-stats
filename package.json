@@ -32,6 +32,7 @@
     ".": "./dist/index.mjs",
     "./package.json": "./package.json"
   },
+  "types": "dist/api.d.ts",
   "files": [
     "dist/",
     "README.md",
@@ -54,7 +55,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
-    "build": "vite build",
+    "build:types": "tsc -p tsconfig.json",
+    "build": "vite build && npm run build:types",
     "prepublishOnly": "npm run test && npm run build"
   },
   "private": false,
@@ -68,6 +70,8 @@
   "devDependencies": {
     "vite": "7.1.7",
     "vitest": "3.2.4",
-    "execa": "9.6.0"
+    "execa": "9.6.0",
+    "typescript": "5.9.3",
+    "@types/node": "24.6.2"
   }
 }

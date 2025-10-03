@@ -37,7 +37,7 @@ export function isoWeekKey(date) {
   const dayNumber = (d.getDay() + 6) % 7;
   target.setDate(target.getDate() - dayNumber + 3);
   const firstThursday = new Date(target.getFullYear(), 0, 4);
-  const diff = (target - firstThursday) / 86400000;
+  const diff = (target.getTime() - firstThursday.getTime()) / 86400000;
   const week = 1 + Math.round(diff / 7);
   return `${target.getFullYear()}-W${String(week).padStart(2, '0')}`;
 }

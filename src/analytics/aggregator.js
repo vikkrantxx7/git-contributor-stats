@@ -59,7 +59,7 @@ export function aggregateBasic(commits, groupBy) {
 /**
  * Get sorting function for contributors
  * @param {string} by - Sort metric
- * @returns {Function} Sorting function
+ * @returns {(a: any, b: any) => number} Sorting function
  */
 export function pickSortMetric(by) {
   switch ((by || '').toLowerCase()) {
