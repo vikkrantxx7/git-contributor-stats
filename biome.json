@@ -1,0 +1,98 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.2.5/schema.json",
+  "files": {
+    "includes": ["**", "!**/coverage", "!**/dist", "!**/*/smoke.js", "!**/index.js"]
+  },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on",
+        "useSortedProperties": "on"
+      }
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "project": "recommended",
+      "react": "all",
+      "test": "all"
+    },
+    "rules": {
+      "nursery": {
+        "noImportCycles": "error",
+        "useConsistentArrowReturn": "error"
+      },
+      "performance": {
+        "noReExportAll": "error"
+      },
+      "style": {
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false,
+            "match": "%?(.+?)[.](.+)",
+            "filenameCases": ["camelCase"]
+          }
+        },
+        "useNamingConvention": {
+          "level": "error",
+          "options": {
+            "strictCase": false,
+            "conventions": [
+              {
+                "selector": {
+                  "kind": "objectLiteralProperty"
+                },
+                "formats": ["camelCase", "CONSTANT_CASE"]
+              },
+              {
+                "selector": {
+                  "kind": "typeProperty"
+                },
+                "formats": ["PascalCase", "camelCase"]
+              }
+            ]
+          }
+        }
+      },
+      "suspicious": {
+        "noUnknownAtRules": "off"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "bracketSameLine": false,
+      "indentWidth": 2,
+      "quoteStyle": "single",
+      "trailingCommas": "none"
+    }
+  },
+  "css": {
+    "formatter": {
+      "enabled": true
+    },
+    "parser": {
+      "cssModules": true
+    }
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.{js,ts}"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noMagicNumbers": "off"
+          }
+        }
+      }
+    }
+  ]
+}

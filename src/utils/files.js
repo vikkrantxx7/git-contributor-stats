@@ -1,8 +1,8 @@
 /**
  * File I/O utilities for git-contributor-stats
  */
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * Safely read and parse package.json
@@ -63,7 +63,9 @@ export async function countTotalLines(repoPath, runGit) {
         if (!stat.isFile() || stat.size > 50 * 1024 * 1024) continue; // skip huge files
         const content = fs.readFileSync(abs, 'utf8');
         total += content.split(/\r?\n/).length;
-      } catch (_) { /* ignore */ }
+      } catch (_) {
+        /* ignore */
+      }
     }
     return total;
   } catch (_) {

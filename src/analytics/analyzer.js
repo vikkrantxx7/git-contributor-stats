@@ -1,8 +1,9 @@
 /**
  * Advanced analytics and similarity matching
  */
-import { normalizeName, similarityScore } from './aliases.js';
+
 import { isoWeekKey } from '../utils/dates.js';
+import { normalizeName, similarityScore } from './aliases.js';
 
 /**
  * Merge similar contributors based on threshold
@@ -83,7 +84,7 @@ export function analyze(commits, similarityThreshold, aliasResolver, canonicalDe
     if (!contribMap[normalized]) {
       let displayName = name;
       let displayEmail = email;
-      if (canonicalDetails && canonicalDetails.has(normalized)) {
+      if (canonicalDetails?.has(normalized)) {
         const info = canonicalDetails.get(normalized);
         displayName = info.name || displayName;
         displayEmail = info.email || displayEmail;
@@ -115,7 +116,7 @@ export function analyze(commits, similarityThreshold, aliasResolver, canonicalDe
       contrib.added += f.added;
       contrib.deleted += f.deleted;
       if (!contrib.files[fname]) contrib.files[fname] = { changes: 0, added: 0, deleted: 0 };
-      contrib.files[fname].changes += (f.added + f.deleted);
+      contrib.files[fname].changes += f.added + f.deleted;
       contrib.files[fname].added += f.added;
       contrib.files[fname].deleted += f.deleted;
 
@@ -126,27 +127,29 @@ export function analyze(commits, similarityThreshold, aliasResolver, canonicalDe
 
   const merged = mergeSimilarContributors(contribMap, similarityThreshold);
 
-  const topContributors = Object.values(merged).map(c => {
-    const filesArr = Object.entries(c.files || {}).map(([filename, info]) => ({
-      filename,
-      changes: info.changes,
-      added: info.added,
-      deleted: info.deleted
-    }));
-    filesArr.sort((a, b) => b.changes - a.changes);
+  const topContributors = Object.values(merged)
+    .map((c) => {
+      const filesArr = Object.entries(c.files || {}).map(([filename, info]) => ({
+        filename,
+        changes: info.changes,
+        added: info.added,
+        deleted: info.deleted
+      }));
+      filesArr.sort((a, b) => b.changes - a.changes);
 
-    return {
-      name: c.name,
-      email: c.email,
-      commits: c.commits,
-      added: c.added,
-      deleted: c.deleted,
-      net: c.added - c.deleted,
-      changes: (c.added + c.deleted),
-      files: c.files,
-      topFiles: filesArr
-    };
-  }).sort((a, b) => b.commits - a.commits);
+      return {
+        name: c.name,
+        email: c.email,
+        commits: c.commits,
+        added: c.added,
+        deleted: c.deleted,
+        net: c.added - c.deleted,
+        changes: c.added + c.deleted,
+        files: c.files,
+        topFiles: filesArr
+      };
+    })
+    .sort((a, b) => b.commits - a.commits);
 
   const filesSingleOwner = [];
   for (const [file, ownersSet] of Object.entries(fileToContribs)) {
@@ -154,8 +157,7 @@ export function analyze(commits, similarityThreshold, aliasResolver, canonicalDe
     if (owners.length === 1) {
       const owner = owners[0];
       const m = merged[owner] || contribMap[owner] || { name: owner };
-      const changes = (merged[owner] && merged[owner].files && merged[owner].files[file])
-        ? merged[owner].files[file].changes : 0;
+      const changes = merged[owner]?.files?.[file] ? merged[owner].files[file].changes : 0;
       filesSingleOwner.push({ file, owner: m.name || owner, changes });
     }
   }
@@ -173,7 +175,7 @@ export function analyze(commits, similarityThreshold, aliasResolver, canonicalDe
     byAdditions: topBy('added'),
     byDeletions: topBy('deleted'),
     byNet: topBy('net'),
-    byChanges: topBy('changes'),
+    byChanges: topBy('changes')
   };
 
   return {

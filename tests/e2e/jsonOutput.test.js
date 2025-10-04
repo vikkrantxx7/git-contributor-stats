@@ -1,7 +1,7 @@
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execa } from 'execa';
-import { createTempRepo, initRepo, seedBasicHistory, cleanupRepo } from '../utils/repo.js';
+import { cleanupRepo, createTempRepo, initRepo, seedBasicHistory } from '../utils/repo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,7 +26,11 @@ describe('JSON output', () => {
   });
 
   it('produces valid JSON with expected fields', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', ['cli.js', '--repo', tmpRepo, '--json', '--no-count-lines'], { cwd: repoRoot });
+    const { stdout, stderr, exitCode } = await execa(
+      'node',
+      ['cli.js', '--repo', tmpRepo, '--json', '--no-count-lines'],
+      { cwd: repoRoot }
+    );
     expect(exitCode).toBe(0);
     expect(stderr).toBe('');
 

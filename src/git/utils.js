@@ -1,9 +1,9 @@
 /**
  * Git command execution utilities
  */
-import { spawnSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 
 /**
  * Execute a git command in the given repository
@@ -15,23 +15,32 @@ export function runGit(repoPath, args) {
   const res = spawnSync('git', args, {
     cwd: repoPath,
     encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 1024,
+    maxBuffer: 1024 * 1024 * 1024
   });
 
   if (res.error) {
     /** @type {any} */ const err = res.error;
-    const msg = err && err.code === 'ENOENT'
-      ? 'Git is not installed or not in PATH.'
-      : `Failed to execute git: ${res.error.message}`;
+    const msg =
+      err && err.code === 'ENOENT'
+        ? 'Git is not installed or not in PATH.'
+        : `Failed to execute git: ${res.error.message}`;
     return { ok: false, error: msg, code: res.status ?? 2 };
   }
 
   if (res.status !== 0) {
     const stderr = (res.stderr || '').trim();
-    if (/does not have any commits yet/i.test(stderr) || /bad default revision 'HEAD'/i.test(stderr) || /ambiguous argument 'HEAD'/i.test(stderr)) {
+    if (
+      /does not have any commits yet/i.test(stderr) ||
+      /bad default revision 'HEAD'/i.test(stderr) ||
+      /ambiguous argument 'HEAD'/i.test(stderr)
+    ) {
       return { ok: true, stdout: '' };
     }
-    return { ok: false, error: (stderr || res.stdout || 'Unknown git error').trim(), code: res.status || 2 };
+    return {
+      ok: false,
+      error: (stderr || res.stdout || 'Unknown git error').trim(),
+      code: res.status || 2
+    };
   }
 
   return { ok: true, stdout: res.stdout };
@@ -67,7 +76,7 @@ export function buildGitLogArgs(opts) {
   if (author) args.push(`--author=${author}`);
   if (branch) args.push(branch);
   args.push('--');
-  if (paths && paths.length) for (const p of paths) args.push(p);
+  if (paths?.length) for (const p of paths) args.push(p);
 
   return args;
 }

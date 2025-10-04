@@ -1,8 +1,8 @@
-import { join, dirname } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execa } from 'execa';
-import { existsSync, readFileSync } from 'node:fs';
-import { createTempRepo, initRepo, seedBasicHistory, cleanupRepo } from '../utils/repo.js';
+import { cleanupRepo, createTempRepo, initRepo, seedBasicHistory } from '../utils/repo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -26,16 +26,25 @@ describe('Reports (MD/HTML) and charts (SVG)', () => {
   it('generates Markdown and HTML reports with charts', async () => {
     const md = join(outDir, 'report.md');
     const html = join(outDir, 'report.html');
-    const { exitCode } = await execa('node', [
-      'cli.js',
-      '--repo', tmpRepo,
-      '--out-dir', outDir,
-      '--md', md,
-      '--html', html,
-      '--no-count-lines',
-      '--charts',
-      '--chart-format', 'svg'
-    ], { cwd: repoRoot });
+    const { exitCode } = await execa(
+      'node',
+      [
+        'cli.js',
+        '--repo',
+        tmpRepo,
+        '--out-dir',
+        outDir,
+        '--md',
+        md,
+        '--html',
+        html,
+        '--no-count-lines',
+        '--charts',
+        '--chart-format',
+        'svg'
+      ],
+      { cwd: repoRoot }
+    );
 
     expect(exitCode).toBe(0);
 
@@ -63,14 +72,21 @@ describe('Reports (MD/HTML) and charts (SVG)', () => {
   it('respects --no-top-stats in Markdown', async () => {
     const noTsDir = join(outDir, 'no-topstats');
     const md = join(noTsDir, 'report.md');
-    await execa('node', [
-      'cli.js',
-      '--repo', tmpRepo,
-      '--out-dir', noTsDir,
-      '--md', md,
-      '--no-top-stats',
-      '--no-count-lines'
-    ], { cwd: repoRoot });
+    await execa(
+      'node',
+      [
+        'cli.js',
+        '--repo',
+        tmpRepo,
+        '--out-dir',
+        noTsDir,
+        '--md',
+        md,
+        '--no-top-stats',
+        '--no-count-lines'
+      ],
+      { cwd: repoRoot }
+    );
 
     const mdContent = readFileSync(md, { encoding: 'utf8' });
     expect(mdContent).not.toMatch(/## Top stats/);

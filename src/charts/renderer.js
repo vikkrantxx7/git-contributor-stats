@@ -1,8 +1,8 @@
 /**
  * Chart rendering with ChartJS and fallback support
  */
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
 import { ensureDir } from '../utils/files.js';
 import { generateBarChartSVG, generateHeatmapSVG } from './svg.js';
 
@@ -17,7 +17,7 @@ async function ensureChartLib() {
     ChartJSNodeCanvas = modCanvas.ChartJSNodeCanvas;
     const modChart = await import('chart.js');
     registerables = modChart.registerables;
-  } catch (e) {
+  } catch (_e) {
     ChartJSNodeCanvas = null;
     registerables = null;
     if (process.env.NODE_ENV !== 'production') {
@@ -57,7 +57,7 @@ export async function renderBarChartImage(format, title, labels, values, filePat
   try {
     if (!labels || !values || labels.length === 0) {
       if (options.verbose) console.error(`[warn] No data for bar chart: ${title}`);
-      labels = ["No data"];
+      labels = ['No data'];
       values = [0];
     }
 
@@ -78,11 +78,13 @@ export async function renderBarChartImage(format, title, labels, values, filePat
       type: 'bar',
       data: {
         labels,
-        datasets: [{
-          label: title,
-          data: values,
-          backgroundColor: '#4e79a7'
-        }]
+        datasets: [
+          {
+            label: title,
+            data: values,
+            backgroundColor: '#4e79a7'
+          }
+        ]
       },
       options: {
         plugins: {
@@ -93,8 +95,8 @@ export async function renderBarChartImage(format, title, labels, values, filePat
         scales: {
           x: { ticks: { maxRotation: 45, minRotation: 45, autoSkip: false } },
           y: { beginAtZero: true }
-        },
-      },
+        }
+      }
     };
     const mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
 
@@ -149,14 +151,15 @@ export async function renderHeatmapImage(format, heatmap, filePath, options = {}
     const datasetForDay = (row, i) => ({
       label: days[i],
       data: row,
-      backgroundColor: row.map(val => {
-        const alpha = val > 0 ? Math.min(1, 0.15 + 0.85 * (val / Math.max(1, Math.max(...row)))) : 0.05;
+      backgroundColor: row.map((val) => {
+        const alpha =
+          val > 0 ? Math.min(1, 0.15 + 0.85 * (val / Math.max(1, Math.max(...row)))) : 0.05;
         return `rgba(78,121,167,${alpha})`;
       }),
       borderWidth: 0,
       type: 'bar',
       barPercentage: 1.0,
-      categoryPercentage: 1.0,
+      categoryPercentage: 1.0
     });
 
     const data = { labels: hours, datasets: heatmap.map(datasetForDay) };
@@ -173,8 +176,8 @@ export async function renderHeatmapImage(format, heatmap, filePath, options = {}
         scales: {
           x: { stacked: true, beginAtZero: true },
           y: { stacked: true }
-        },
-      },
+        }
+      }
     };
     const mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
 

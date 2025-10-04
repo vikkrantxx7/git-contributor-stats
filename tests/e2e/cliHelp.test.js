@@ -8,7 +8,9 @@ const repoRoot = dirname(dirname(__dirname));
 
 describe('CLI basics', () => {
   it('shows help with examples', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', ['cli.js', '--help'], { cwd: repoRoot });
+    const { stdout, stderr, exitCode } = await execa('node', ['cli.js', '--help'], {
+      cwd: repoRoot
+    });
     expect(exitCode).toBe(0);
     expect(stderr).toBe('');
     expect(stdout).toMatch(/git-contributor-stats/i);

@@ -12,8 +12,7 @@ export default defineConfig({
     coverage: {
       enabled: false,
       provider: 'v8',
-      reportsDirectory: 'coverage',
-    },
-  },
+      reportsDirectory: 'coverage'
+    }
+  }
 });
-

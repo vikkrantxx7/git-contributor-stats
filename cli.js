@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 /**
  * git-contributor-stats - CLI entry (development / source execution)
  * Delegates to the modular CLI implementation in src/cli/index.js
  */
 import { main } from './src/cli/index.js';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
 
 // Execute only when run directly (e.g. `node cli.js`)
 const isDirectRun = (() => {
@@ -20,7 +20,7 @@ const isDirectRun = (() => {
 })();
 
 if (isDirectRun) {
-  main(process.argv).catch(err => {
+  main(process.argv).catch((err) => {
     console.error(err?.stack || String(err));
     process.exit(2);
   });

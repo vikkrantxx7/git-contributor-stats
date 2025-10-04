@@ -1,13 +1,7 @@
 // filepath: tests/e2e/api.test.js
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { execa } from 'execa';
 import { getContributorStats } from '../../src/index.js';
-import { createTempRepo, initRepo, seedBasicHistory, cleanupRepo } from '../utils/repo.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const repoRoot = dirname(dirname(__dirname));
+import { cleanupRepo, createTempRepo, initRepo, seedBasicHistory } from '../utils/repo.js';
 
 async function getCommitCount(repoDir) {
   const { stdout } = await execa('git', ['log', '--oneline'], { cwd: repoDir });

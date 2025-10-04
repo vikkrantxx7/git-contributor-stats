@@ -34,7 +34,7 @@ export function parseGitLog(stdout) {
         additions: 0,
         deletions: 0,
         filesChanged: 0,
-        files: [],
+        files: []
       };
       expectHeader = false;
       continue;

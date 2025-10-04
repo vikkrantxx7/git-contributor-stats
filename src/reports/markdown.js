@@ -37,10 +37,13 @@ export function generateMarkdownReport(data, repoRoot, opts = {}) {
 
     function formatStatLine(label, entry, metricKey) {
       if (!entry) return `- **${label}:** —`;
-      const metricVal = (entry && typeof entry[metricKey] === 'number')
-        ? entry[metricKey]
-        : (metricKey === 'net' ? (entry.added || 0) - (entry.deleted || 0) : undefined);
-      const suffix = (typeof metricVal === 'number') ? ` (${metricVal.toLocaleString()})` : '';
+      const metricVal =
+        entry && typeof entry[metricKey] === 'number'
+          ? entry[metricKey]
+          : metricKey === 'net'
+            ? (entry.added || 0) - (entry.deleted || 0)
+            : undefined;
+      const suffix = typeof metricVal === 'number' ? ` (${metricVal.toLocaleString()})` : '';
       const who = `${entry.name || '—'}${entry.email ? ` <${entry.email}>` : ''}`;
       return `- **${label}:** ${who}${suffix}`;
     }
@@ -48,8 +51,10 @@ export function generateMarkdownReport(data, repoRoot, opts = {}) {
     lines.push('## Top stats');
     lines.push('');
     if (want.has('commits')) lines.push(formatStatLine('Most commits', ts.byCommits, 'commits'));
-    if (want.has('additions')) lines.push(formatStatLine('Most additions', ts.byAdditions, 'added'));
-    if (want.has('deletions')) lines.push(formatStatLine('Most deletions', ts.byDeletions, 'deleted'));
+    if (want.has('additions'))
+      lines.push(formatStatLine('Most additions', ts.byAdditions, 'added'));
+    if (want.has('deletions'))
+      lines.push(formatStatLine('Most deletions', ts.byDeletions, 'deleted'));
     if (want.has('net')) lines.push(formatStatLine('Best net contribution', ts.byNet, 'net'));
     if (want.has('changes')) lines.push(formatStatLine('Most changes', ts.byChanges, 'changes'));
     lines.push('');
@@ -63,10 +68,13 @@ export function generateMarkdownReport(data, repoRoot, opts = {}) {
 
   data.topContributors.slice(0, 50).forEach((c, idx) => {
     const net = (c.added || 0) - (c.deleted || 0);
-    const topFiles = (c.topFiles || []).slice(0, 3)
-      .map(f => `\`${f.filename}\`(${f.changes})`)
+    const topFiles = (c.topFiles || [])
+      .slice(0, 3)
+      .map((f) => `\`${f.filename}\`(${f.changes})`)
       .join(', ');
-    lines.push(`| ${idx + 1} | **${c.name}** \`<${c.email}>\` | ${(c.commits || 0).toLocaleString()} | ${(c.added || 0).toLocaleString()} | ${(c.deleted || 0).toLocaleString()} | ${net.toLocaleString()} | ${topFiles} |`);
+    lines.push(
+      `| ${idx + 1} | **${c.name}** \`<${c.email}>\` | ${(c.commits || 0).toLocaleString()} | ${(c.added || 0).toLocaleString()} | ${(c.deleted || 0).toLocaleString()} | ${net.toLocaleString()} | ${topFiles} |`
+    );
   });
 
   lines.push('');
@@ -83,7 +91,7 @@ export function generateMarkdownReport(data, repoRoot, opts = {}) {
     lines.push('| File | Owner | Changes |');
     lines.push('|---|---|---:|');
 
-    data.busFactor.filesSingleOwner.slice(0, 20).forEach(f => {
+    data.busFactor.filesSingleOwner.slice(0, 20).forEach((f) => {
       lines.push(`| \`${f.file}\` | ${f.owner} | ${f.changes.toLocaleString()} |`);
     });
     lines.push('');

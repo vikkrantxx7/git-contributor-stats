@@ -1,9 +1,10 @@
 // filepath: tests/e2e/extras.test.js
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+
 import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execa } from 'execa';
-import { createTempRepo, initRepo, seedBasicHistory, cleanupRepo } from '../utils/repo.js';
+import { cleanupRepo, createTempRepo, initRepo, seedBasicHistory } from '../utils/repo.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -29,15 +30,24 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
 
   it('generates charts into a custom charts-dir', async () => {
     const chartsDir = join(tmpRepo, 'charts-out');
-    try { rmSync(chartsDir, { recursive: true, force: true }); } catch {}
-    const { exitCode } = await execa('node', [
-      'cli.js',
-      '--repo', tmpRepo,
-      '--charts',
-      '--charts-dir', chartsDir,
-      '--chart-format', 'svg',
-      '--no-count-lines'
-    ], { cwd: repoRoot });
+    try {
+      rmSync(chartsDir, { recursive: true, force: true });
+    } catch {}
+    const { exitCode } = await execa(
+      'node',
+      [
+        'cli.js',
+        '--repo',
+        tmpRepo,
+        '--charts',
+        '--charts-dir',
+        chartsDir,
+        '--chart-format',
+        'svg',
+        '--no-count-lines'
+      ],
+      { cwd: repoRoot }
+    );
 
     expect(exitCode).toBe(0);
 
@@ -51,7 +61,11 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
   });
 
   it('handles similarity threshold without changing totalCommits', async () => {
-    const { stdout, exitCode } = await execa('node', ['cli.js', '--repo', tmpRepo, '--similarity', '0.5', '--json', '--no-count-lines'], { cwd: repoRoot });
+    const { stdout, exitCode } = await execa(
+      'node',
+      ['cli.js', '--repo', tmpRepo, '--similarity', '0.5', '--json', '--no-count-lines'],
+      { cwd: repoRoot }
+    );
     expect(exitCode).toBe(0);
     const data = JSON.parse(stdout);
     const count = await getCommitCount(tmpRepo);
@@ -61,7 +75,9 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
   it('returns a friendly error on invalid repository', async () => {
     let error = null;
     try {
-      await execa('node', ['cli.js', '--repo', '/definitely/not/a/repo', '--json'], { cwd: repoRoot });
+      await execa('node', ['cli.js', '--repo', '/definitely/not/a/repo', '--json'], {
+        cwd: repoRoot
+      });
     } catch (e) {
       error = e;
     }
@@ -70,7 +86,11 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
   });
 
   it('emits debug logs to stderr when verbose is enabled', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', ['cli.js', '--repo', tmpRepo, '--json', '--verbose', '--no-count-lines'], { cwd: repoRoot });
+    const { stdout, stderr, exitCode } = await execa(
+      'node',
+      ['cli.js', '--repo', tmpRepo, '--json', '--verbose', '--no-count-lines'],
+      { cwd: repoRoot }
+    );
     expect(exitCode).toBe(0);
     expect(stdout.trim().startsWith('{')).toBe(true);
     expect(stderr).toMatch(/\[debug\]/);

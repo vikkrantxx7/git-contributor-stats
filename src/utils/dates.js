@@ -16,13 +16,19 @@ export function parseDateInput(input) {
     const unit = rel[2].toLowerCase();
     const now = new Date();
     const d = new Date(now);
-    const mult = unit.startsWith('day') ? 1 : unit.startsWith('week') ? 7 : unit.startsWith('month') ? 30 : 365;
+    const mult = unit.startsWith('day')
+      ? 1
+      : unit.startsWith('week')
+        ? 7
+        : unit.startsWith('month')
+          ? 30
+          : 365;
     d.setDate(now.getDate() - qty * mult);
     return d.toISOString();
   }
 
   const d = new Date(input);
-  if (!isNaN(d.getTime())) return d.toISOString();
+  if (!Number.isNaN(d.getTime())) return d.toISOString();
   return input;
 }
 

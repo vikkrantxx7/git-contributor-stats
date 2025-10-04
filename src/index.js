@@ -2,27 +2,30 @@
 // Provides getContributorStats(options) returning the same analysis object used by the CLI.
 // This avoids invoking any CLI/parsing logic and is suitable for library consumers.
 
-import path from 'node:path';
 import fs from 'node:fs';
-
-// Utils
-import { tryLoadJSON, countTotalLines, ensureDir } from './utils/files.js';
-import { parseDateInput } from './utils/dates.js';
-import { formatTopStatsLines, parseTopStatsMetrics } from './utils/formatting.js';
-
-// Git
-import { runGit, isGitRepo, buildGitLogArgs } from './git/utils.js';
-import { parseGitLog } from './git/parser.js';
-
+import path from 'node:path';
 // Analytics
-import { aggregateBasic, pickSortMetric, computeMeta, printTable, printCSV } from './analytics/aggregator.js';
-import { analyze } from './analytics/analyzer.js';
+import {
+  aggregateBasic,
+  computeMeta,
+  pickSortMetric,
+  printCSV,
+  printTable
+} from './analytics/aggregator.js';
 import { buildAliasResolver } from './analytics/aliases.js';
-import { generateCSVReport } from './reports/csv.js';
-import { generateMarkdownReport } from './reports/markdown.js';
-import { generateHTMLReport } from './reports/html.js';
+import { analyze } from './analytics/analyzer.js';
 import { renderBarChartImage, renderHeatmapImage } from './charts/renderer.js';
 import { generateBarChartSVG, generateHeatmapSVG } from './charts/svg.js';
+import { parseGitLog } from './git/parser.js';
+// Git
+import { buildGitLogArgs, isGitRepo, runGit } from './git/utils.js';
+import { generateCSVReport } from './reports/csv.js';
+import { generateHTMLReport } from './reports/html.js';
+import { generateMarkdownReport } from './reports/markdown.js';
+import { parseDateInput } from './utils/dates.js';
+// Utils
+import { countTotalLines, ensureDir, tryLoadJSON } from './utils/files.js';
+import { formatTopStatsLines, parseTopStatsMetrics } from './utils/formatting.js';
 
 /**
  * @typedef {Object} ContributorStatsOptions
@@ -52,7 +55,9 @@ import { generateBarChartSVG, generateHeatmapSVG } from './charts/svg.js';
 export async function getContributorStats(opts = {}) {
   const repo = path.resolve(process.cwd(), opts.repo || '.');
   if (!isGitRepo(repo)) throw new Error(`Not a Git repository: ${repo}`);
-  const debug = (...msg) => { if (opts.verbose) console.error('[debug]', ...msg); };
+  const debug = (...msg) => {
+    if (opts.verbose) console.error('[debug]', ...msg);
+  };
 
   // Load alias configuration (precedence: aliasConfig param > aliasFile > default file)
   let aliasConfig = opts.aliasConfig || null;
@@ -74,7 +79,7 @@ export async function getContributorStats(opts = {}) {
 
   const since = parseDateInput(opts.since);
   const until = parseDateInput(opts.until);
-  const paths = Array.isArray(opts.paths) ? opts.paths : (opts.paths ? [opts.paths] : []);
+  const paths = Array.isArray(opts.paths) ? opts.paths : opts.paths ? [opts.paths] : [];
 
   const gitArgs = buildGitLogArgs({
     branch: opts.branch,
@@ -84,7 +89,7 @@ export async function getContributorStats(opts = {}) {
     includeMerges: !!opts.includeMerges,
     paths
   });
-  debug('git', gitArgs.map(a => (a.includes(' ') ? `'${a}'` : a)).join(' '));
+  debug('git', gitArgs.map((a) => (a.includes(' ') ? `'${a}'` : a)).join(' '));
 
   const result = runGit(repo, gitArgs);
   if (!result.ok) throw new Error(result.error || 'Failed to run git log');
@@ -118,7 +123,10 @@ export async function getContributorStats(opts = {}) {
   // Determine repo root & branch
   const repoRootResult = runGit(repo, ['rev-parse', '--show-toplevel']);
   const repoRoot = repoRootResult.ok ? repoRootResult.stdout.trim() : repo;
-  const branch = opts.branch || (runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']).stdout || '').trim() || null;
+  const branch =
+    opts.branch ||
+    (runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']).stdout || '').trim() ||
+    null;
 
   const final = {
     meta: {
@@ -169,14 +177,20 @@ export async function generateOutputs(final, opts = {}) {
 
   if (writeMDPath) {
     ensureDir(path.dirname(writeMDPath));
-    const md = generateMarkdownReport(final, final.meta.repo, { includeTopStats: opts.topStats, topStatsMetrics });
+    const md = generateMarkdownReport(final, final.meta.repo, {
+      includeTopStats: opts.topStats,
+      topStatsMetrics
+    });
     fs.writeFileSync(writeMDPath, md, 'utf8');
     console.error(`Wrote Markdown report to ${writeMDPath}`);
   }
 
   if (writeHTMLPath) {
     ensureDir(path.dirname(writeHTMLPath));
-    const html = generateHTMLReport(final, final.meta.repo, { includeTopStats: opts.topStats, topStatsMetrics });
+    const html = generateHTMLReport(final, final.meta.repo, {
+      includeTopStats: opts.topStats,
+      topStatsMetrics
+    });
     fs.writeFileSync(writeHTMLPath, html, 'utf8');
     console.error(`Wrote HTML report to ${writeHTMLPath}`);
   }
@@ -191,26 +205,52 @@ export async function generateCharts(final, opts = {}, outDir) {
   const chartsRequested = opts.charts || opts.svg || opts.svgDir;
   if (!chartsRequested) return;
 
-  const chartsDir = outDir ? outDir : (opts.chartsDir || opts.svgDir || path.join(process.cwd(), 'charts'));
+  const chartsDir = outDir
+    ? outDir
+    : opts.chartsDir || opts.svgDir || path.join(process.cwd(), 'charts');
   ensureDir(chartsDir);
 
   const formatOpt = String(opts.chartFormat || 'svg').toLowerCase();
   const formats = formatOpt === 'both' ? ['svg', 'png'] : [formatOpt === 'png' ? 'png' : 'svg'];
 
   if ((opts.svg || opts.svgDir) && !opts.charts && !opts.chartFormat && !opts.chartsDir) {
-    console.error('[warn] --svg/--svg-dir are deprecated; prefer --charts/--charts-dir/--chart-format');
+    console.error(
+      '[warn] --svg/--svg-dir are deprecated; prefer --charts/--charts-dir/--chart-format'
+    );
   }
 
-  const names = final.topContributors.map(c => c.name || '');
-  const commitsVals = final.topContributors.map(c => c.commits || 0);
-  const netVals = final.topContributors.map(c => (c.added || 0) - (c.deleted || 0));
+  const names = final.topContributors.map((c) => c.name || '');
+  const commitsVals = final.topContributors.map((c) => c.commits || 0);
+  const netVals = final.topContributors.map((c) => (c.added || 0) - (c.deleted || 0));
 
   const tasks = [];
   for (const fmt of formats) {
     const ext = fmt === 'svg' ? '.svg' : '.png';
-    tasks.push(renderBarChartImage(fmt, 'Top contributors by commits', names, commitsVals, path.join(chartsDir, `top-commits${ext}`), { limit: 25, verbose: opts.verbose }));
-    tasks.push(renderBarChartImage(fmt, 'Top contributors by net lines', names, netVals, path.join(chartsDir, `top-net${ext}`), { limit: 25, verbose: opts.verbose }));
-    tasks.push(renderHeatmapImage(fmt, final.heatmap, path.join(chartsDir, `heatmap${ext}`), { verbose: opts.verbose }));
+    tasks.push(
+      renderBarChartImage(
+        fmt,
+        'Top contributors by commits',
+        names,
+        commitsVals,
+        path.join(chartsDir, `top-commits${ext}`),
+        { limit: 25, verbose: opts.verbose }
+      )
+    );
+    tasks.push(
+      renderBarChartImage(
+        fmt,
+        'Top contributors by net lines',
+        names,
+        netVals,
+        path.join(chartsDir, `top-net${ext}`),
+        { limit: 25, verbose: opts.verbose }
+      )
+    );
+    tasks.push(
+      renderHeatmapImage(fmt, final.heatmap, path.join(chartsDir, `heatmap${ext}`), {
+        verbose: opts.verbose
+      })
+    );
   }
   await Promise.all(tasks);
 
@@ -222,13 +262,24 @@ export async function generateCharts(final, opts = {}, outDir) {
 
 export async function ensureFallbackSVGs(chartsDir, names, commitsVals, netVals, heatmap, verbose) {
   const svgFiles = [
-    { path: path.join(chartsDir, 'top-commits.svg'), gen: () => generateBarChartSVG('Top contributors by commits', names, commitsVals, { limit: 25 }) },
-    { path: path.join(chartsDir, 'top-net.svg'), gen: () => generateBarChartSVG('Top contributors by net lines', names, netVals, { limit: 25 }) },
+    {
+      path: path.join(chartsDir, 'top-commits.svg'),
+      gen: () =>
+        generateBarChartSVG('Top contributors by commits', names, commitsVals, { limit: 25 })
+    },
+    {
+      path: path.join(chartsDir, 'top-net.svg'),
+      gen: () => generateBarChartSVG('Top contributors by net lines', names, netVals, { limit: 25 })
+    },
     { path: path.join(chartsDir, 'heatmap.svg'), gen: () => generateHeatmapSVG(heatmap) }
   ];
   for (const { path: svgPath, gen } of svgFiles) {
     if (!fs.existsSync(svgPath)) {
-      try { fs.writeFileSync(svgPath, gen(), 'utf8'); } catch (e) { if (verbose) console.error('[error] Fallback write failed', svgPath, e.message); }
+      try {
+        fs.writeFileSync(svgPath, gen(), 'utf8');
+      } catch (e) {
+        if (verbose) console.error('[error] Fallback write failed', svgPath, e.message);
+      }
     }
   }
 }
@@ -247,7 +298,7 @@ export async function generateWorkflow(repo) {
 export function handleStdoutOutput(final, opts = {}) {
   const stdoutWantsJSON = opts.json || String(opts.format || '').toLowerCase() === 'json';
   const stdoutWantsCSV = String(opts.format || '').toLowerCase() === 'csv';
-  const groupBy = (final.basic && final.basic.groupBy) || (opts.groupBy || 'email');
+  const groupBy = (final.basic && final.basic.groupBy) || opts.groupBy || 'email';
 
   if (stdoutWantsJSON) {
     console.log(JSON.stringify(final, null, 2));
@@ -270,4 +321,3 @@ export function handleStdoutOutput(final, opts = {}) {
 }
 
 export { parseDateInput, analyze, buildAliasResolver };
-

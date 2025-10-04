@@ -31,8 +31,17 @@ export interface ContributorBasic {
   lastCommitDate?: string;
 }
 
-export interface FileStats { changes: number; added: number; deleted: number; }
-export interface TopFileEntry { filename: string; changes: number; added: number; deleted: number; }
+export interface FileStats {
+  changes: number;
+  added: number;
+  deleted: number;
+}
+export interface TopFileEntry {
+  filename: string;
+  changes: number;
+  added: number;
+  deleted: number;
+}
 
 export interface TopContributor {
   name?: string;
@@ -88,12 +97,26 @@ export interface GetContributorStatsResult {
   commitFrequency: CommitFrequencyBreakdown;
   heatmap: number[][]; // 7 x 24
   busFactor: BusFactorInfo;
-  basic: { contributors: ContributorBasic[]; meta: { contributors: number; commits: number; additions: number; deletions: number; firstCommitDate?: string; lastCommitDate?: string; } };
+  basic: {
+    contributors: ContributorBasic[];
+    meta: {
+      contributors: number;
+      commits: number;
+      additions: number;
+      deletions: number;
+      firstCommitDate?: string;
+      lastCommitDate?: string;
+    };
+  };
 }
 
 // Declarations (implementations provided by compiled JS at dist/index.mjs)
-export declare function getContributorStats(opts?: ContributorStatsOptions): Promise<GetContributorStatsResult>;
+export declare function getContributorStats(
+  opts?: ContributorStatsOptions
+): Promise<GetContributorStatsResult>;
 export declare function parseDateInput(input?: string): string | undefined;
 export declare function analyze(...args: any[]): any; // For advanced custom usage – detailed typing can be added later
-export declare function buildAliasResolver(config: any): { resolve: ((normalized: string, name?: string, email?: string) => string) | null; canonicalDetails: Map<string, { name?: string; email?: string }>; };
-
+export declare function buildAliasResolver(config: any): {
+  resolve: ((normalized: string, name?: string, email?: string) => string) | null;
+  canonicalDetails: Map<string, { name?: string; email?: string }>;
+};

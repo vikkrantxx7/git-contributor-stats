@@ -26,7 +26,8 @@ export function normalizeName(name) {
  * @returns {number} Edit distance
  */
 function levenshteinDistance(a, b) {
-  const m = a.length, n = b.length;
+  const m = a.length,
+    n = b.length;
   if (m === 0) return n;
   if (n === 0) return m;
 
@@ -37,11 +38,7 @@ function levenshteinDistance(a, b) {
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
-      );
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
     }
   }
   return dp[m][n];
@@ -60,7 +57,7 @@ export function similarityScore(a, b) {
     // Fallback to Levenshtein-based similarity
     const maxLen = Math.max(a.length, b.length) || 1;
     const dist = levenshteinDistance(a, b);
-    return 1 - (dist / maxLen);
+    return 1 - dist / maxLen;
   }
 }
 
@@ -84,7 +81,9 @@ export function buildAliasResolver(config) {
     if (config.map && typeof config.map === 'object') mapEntries = Object.entries(config.map);
 
     // Handle flat map format
-    const flatMapCandidates = Object.keys(config).filter(k => k !== 'groups' && k !== 'map' && k !== 'canonical');
+    const flatMapCandidates = Object.keys(config).filter(
+      (k) => k !== 'groups' && k !== 'map' && k !== 'canonical'
+    );
     if (mapEntries.length === 0 && flatMapCandidates.length) {
       mapEntries = Object.entries(config).filter(([k]) => k !== 'groups' && k !== 'canonical');
     }
@@ -94,8 +93,8 @@ export function buildAliasResolver(config) {
       for (const [canonKey, info] of Object.entries(config.canonical)) {
         const normKey = normalizeName(canonKey);
         canonicalDetails.set(normKey, {
-          name: info && info.name || undefined,
-          email: info && info.email || undefined
+          name: info?.name || undefined,
+          email: info?.email || undefined
         });
       }
     }
@@ -125,7 +124,7 @@ export function buildAliasResolver(config) {
   // Process groups
   for (const g of groups) {
     if (!Array.isArray(g) || g.length === 0) continue;
-    const canonicalCandidate = g.find(s => typeof s === 'string' && s.includes('@')) || g[0];
+    const canonicalCandidate = g.find((s) => typeof s === 'string' && s.includes('@')) || g[0];
     const canonicalNorm = normalizeName(String(canonicalCandidate));
 
     for (const item of g) {

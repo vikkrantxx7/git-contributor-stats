@@ -1,23 +1,21 @@
 #!/usr/bin/env node
 
+import fs from 'node:fs';
 /**
  * Main CLI entry point for git-contributor-stats
  * Refactored to delegate core logic to programmatic API helpers in ../index.js
  */
 import path from 'node:path';
 import process from 'node:process';
-import fs from 'node:fs';
-
-// Shared API helpers
-import {
-  getContributorStats,
-  generateOutputs,
-  generateWorkflow,
-  handleStdoutOutput
-} from '../index.js';
-
 // Git repo detection (lightweight)
 import { isGitRepo } from '../git/utils.js';
+// Shared API helpers
+import {
+  generateOutputs,
+  generateWorkflow,
+  getContributorStats,
+  handleStdoutOutput
+} from '../index.js';
 
 // CLI option builder
 import { setupCLI } from './options.js';

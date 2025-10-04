@@ -1,5 +1,5 @@
-import { defineConfig } from 'vite';
 import { builtinModules } from 'node:module';
+import { defineConfig } from 'vite';
 
 // Externalize Node builtins and runtime deps to avoid bundling them
 const externals = [

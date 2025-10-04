@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from 'child_process';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
 import { fileURLToPath } from 'url';
 
 // Test configuration
@@ -54,7 +54,9 @@ class TestRunner {
     console.log(`  ✅ Passed: ${this.passed}`);
     console.log(`  ❌ Failed: ${this.failed}`);
     console.log(`  ⏭️  Skipped: ${this.skipped}`);
-    console.log(`  📈 Success Rate: ${this.passed}/${this.tests.length} (${Math.round(this.passed/this.tests.length*100)}%)`);
+    console.log(
+      `  📈 Success Rate: ${this.passed}/${this.tests.length} (${Math.round((this.passed / this.tests.length) * 100)}%)`
+    );
   }
 }
 
@@ -84,7 +86,9 @@ function ensureTestRepo(root) {
   const tmp = path.join(root, 'tmp-smoke-repo');
 
   // Clean up any existing repo
-  try { fs.rmSync(tmp, { recursive: true, force: true }); } catch(_) {}
+  try {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  } catch (_) {}
 
   // Create directory and initialize git repo
   fs.mkdirSync(tmp, { recursive: true });
@@ -105,22 +109,62 @@ function ensureTestRepo(root) {
     run('git', ['commit', '-m', 'Initial commit'], { cwd: tmp, stdio: 'pipe' });
 
     // Second author with more realistic changes
-    fs.appendFileSync(path.join(tmp, 'README.md'), '\n## Features\n- Feature A\n- Feature B\n', 'utf8');
-    fs.writeFileSync(path.join(tmp, 'src/utils.js'), 'export function helper() {\n  return "helper";\n}\n', 'utf8');
+    fs.appendFileSync(
+      path.join(tmp, 'README.md'),
+      '\n## Features\n- Feature A\n- Feature B\n',
+      'utf8'
+    );
+    fs.writeFileSync(
+      path.join(tmp, 'src/utils.js'),
+      'export function helper() {\n  return "helper";\n}\n',
+      'utf8'
+    );
     run('git', ['add', '.'], { cwd: tmp, stdio: 'pipe' });
-    run('git', ['commit', '-m', 'Add features and utils', '--author', 'Alice Developer <alice@example.com>'], { cwd: tmp, stdio: 'pipe' });
+    run(
+      'git',
+      ['commit', '-m', 'Add features and utils', '--author', 'Alice Developer <alice@example.com>'],
+      { cwd: tmp, stdio: 'pipe' }
+    );
 
     // Third author with deletions and modifications
-    fs.writeFileSync(path.join(tmp, 'src/main.js'), 'console.log("Hello, improved world!");\nconsole.log("Added logging");\n', 'utf8');
-    fs.writeFileSync(path.join(tmp, 'package.json'), '{\n  "name": "test-repo",\n  "version": "1.0.0"\n}\n', 'utf8');
+    fs.writeFileSync(
+      path.join(tmp, 'src/main.js'),
+      'console.log("Hello, improved world!");\nconsole.log("Added logging");\n',
+      'utf8'
+    );
+    fs.writeFileSync(
+      path.join(tmp, 'package.json'),
+      '{\n  "name": "test-repo",\n  "version": "1.0.0"\n}\n',
+      'utf8'
+    );
     run('git', ['add', '.'], { cwd: tmp, stdio: 'pipe' });
-    run('git', ['commit', '-m', 'Improve main.js and add package.json', '--author', 'Bob Contributor <bob@example.com>'], { cwd: tmp, stdio: 'pipe' });
+    run(
+      'git',
+      [
+        'commit',
+        '-m',
+        'Improve main.js and add package.json',
+        '--author',
+        'Bob Contributor <bob@example.com>'
+      ],
+      { cwd: tmp, stdio: 'pipe' }
+    );
 
     // Fourth commit with file deletion
     fs.unlinkSync(path.join(tmp, 'src/utils.js'));
     fs.appendFileSync(path.join(tmp, 'README.md'), '\n## Changelog\n- Removed utils.js\n', 'utf8');
     run('git', ['add', '.'], { cwd: tmp, stdio: 'pipe' });
-    run('git', ['commit', '-m', 'Remove utils.js and update changelog', '--author', 'Charlie Maintainer <charlie@example.com>'], { cwd: tmp, stdio: 'pipe' });
+    run(
+      'git',
+      [
+        'commit',
+        '-m',
+        'Remove utils.js and update changelog',
+        '--author',
+        'Charlie Maintainer <charlie@example.com>'
+      ],
+      { cwd: tmp, stdio: 'pipe' }
+    );
 
     // Verify the repo has commits
     const logResult = run('git', ['log', '--oneline'], { cwd: tmp, stdio: 'pipe' });
@@ -131,11 +175,17 @@ function ensureTestRepo(root) {
     const commitCount = logResult.stdout.trim().split('\n').length;
     if (TEST_CONFIG.verbose) {
       console.log(`Created test repo with ${commitCount} commits`);
-      console.log('Commits:', logResult.stdout.trim().split('\n').map(line => `  - ${line}`).join('\n'));
+      console.log(
+        'Commits:',
+        logResult.stdout
+          .trim()
+          .split('\n')
+          .map((line) => `  - ${line}`)
+          .join('\n')
+      );
     }
 
     return { path: tmp, commitCount };
-
   } catch (error) {
     console.error('Failed to create test repository:', error.message);
     throw error;
@@ -144,7 +194,15 @@ function ensureTestRepo(root) {
 
 // Test validation helpers
 function validateJSON(data) {
-  const required = ['meta', 'totalCommits', 'contributors', 'topContributors', 'topStats', 'heatmap', 'busFactor'];
+  const required = [
+    'meta',
+    'totalCommits',
+    'contributors',
+    'topContributors',
+    'topStats',
+    'heatmap',
+    'busFactor'
+  ];
   for (const field of required) {
     if (!(field in data)) {
       throw new Error(`JSON output missing required field: ${field}`);
@@ -247,7 +305,11 @@ async function runSmokeTests() {
 
   // Test 2: CLI Version
   runner.test('CLI Version', () => {
-    const result = run('node', ['cli.js', '--version'], { cwd: root, stdio: 'pipe', timeout: 5000 });
+    const result = run('node', ['cli.js', '--version'], {
+      cwd: root,
+      stdio: 'pipe',
+      timeout: 5000
+    });
     if (!result.stdout.trim().match(/^\d+\.\d+\.\d+/)) {
       throw new Error('Version output should be in semver format');
     }
@@ -280,11 +342,15 @@ async function runSmokeTests() {
 
   // Test 5: Table Output
   runner.test('Table Output Format', () => {
-    const result = run('node', ['cli.js', '--repo', testRepo.path, '--format', 'table', '--top', '5', '--no-count-lines'], {
-      cwd: root,
-      stdio: 'pipe',
-      timeout: 10000
-    });
+    const result = run(
+      'node',
+      ['cli.js', '--repo', testRepo.path, '--format', 'table', '--top', '5', '--no-count-lines'],
+      {
+        cwd: root,
+        stdio: 'pipe',
+        timeout: 10000
+      }
+    );
 
     if (!result.stdout.includes('Contributors:') || !result.stdout.includes('Commits')) {
       throw new Error('Table output should contain contributor summary');
@@ -293,11 +359,15 @@ async function runSmokeTests() {
 
   // Test 6: CSV Output
   runner.test('CSV Output Format', () => {
-    const result = run('node', ['cli.js', '--repo', testRepo.path, '--format', 'csv', '--top', '5', '--no-count-lines'], {
-      cwd: root,
-      stdio: 'pipe',
-      timeout: 10000
-    });
+    const result = run(
+      'node',
+      ['cli.js', '--repo', testRepo.path, '--format', 'csv', '--top', '5', '--no-count-lines'],
+      {
+        cwd: root,
+        stdio: 'pipe',
+        timeout: 10000
+      }
+    );
 
     const lines = result.stdout.trim().split('\n');
     if (lines.length < 2) {
@@ -313,12 +383,30 @@ async function runSmokeTests() {
   // Test 7: Generate Reports with Top Stats
   runner.test('Generate Reports with Top Stats', () => {
     const out = path.join(root, 'reports-smoke');
-    try { fs.rmSync(out, { recursive: true, force: true }); } catch(_) {}
+    try {
+      fs.rmSync(out, { recursive: true, force: true });
+    } catch (_) {}
 
-    run('node', ['cli.js', '--repo', testRepo.path, '--out-dir', out, '--md', path.join(out, 'report.md'), '--html', path.join(out, 'report.html'), '--no-count-lines', '--charts'], {
-      cwd: root,
-      timeout: 20000
-    });
+    run(
+      'node',
+      [
+        'cli.js',
+        '--repo',
+        testRepo.path,
+        '--out-dir',
+        out,
+        '--md',
+        path.join(out, 'report.md'),
+        '--html',
+        path.join(out, 'report.html'),
+        '--no-count-lines',
+        '--charts'
+      ],
+      {
+        cwd: root,
+        timeout: 20000
+      }
+    );
 
     // Validate generated files
     validateFileExists(path.join(out, 'report.md'), 'Markdown report');
@@ -345,12 +433,30 @@ async function runSmokeTests() {
   // Test 9: Reports without Top Stats
   runner.test('Generate Reports without Top Stats', () => {
     const out2 = path.join(root, 'reports-smoke-no-topstats');
-    try { fs.rmSync(out2, { recursive: true, force: true }); } catch(_) {}
+    try {
+      fs.rmSync(out2, { recursive: true, force: true });
+    } catch (_) {}
 
-    run('node', ['cli.js', '--repo', testRepo.path, '--out-dir', out2, '--md', path.join(out2, 'report.md'), '--html', path.join(out2, 'report.html'), '--no-top-stats', '--no-count-lines'], {
-      cwd: root,
-      timeout: 15000
-    });
+    run(
+      'node',
+      [
+        'cli.js',
+        '--repo',
+        testRepo.path,
+        '--out-dir',
+        out2,
+        '--md',
+        path.join(out2, 'report.md'),
+        '--html',
+        path.join(out2, 'report.html'),
+        '--no-top-stats',
+        '--no-count-lines'
+      ],
+      {
+        cwd: root,
+        timeout: 15000
+      }
+    );
 
     validateFileExists(path.join(out2, 'report.md'), 'Markdown report (no top stats)');
     validateMarkdownContent(path.join(out2, 'report.md'), false);
@@ -359,7 +465,9 @@ async function runSmokeTests() {
   // Test 10: CSV File Output
   runner.test('CSV File Output', () => {
     const csvPath = path.join(root, 'test-output.csv');
-    try { fs.unlinkSync(csvPath); } catch(_) {}
+    try {
+      fs.unlinkSync(csvPath);
+    } catch (_) {}
 
     run('node', ['cli.js', '--repo', testRepo.path, '--csv', csvPath, '--no-count-lines'], {
       cwd: root,
@@ -375,16 +483,22 @@ async function runSmokeTests() {
     }
 
     // Cleanup
-    try { fs.unlinkSync(csvPath); } catch(_) {}
+    try {
+      fs.unlinkSync(csvPath);
+    } catch (_) {}
   });
 
   // Test 11: Branch Filtering
   runner.test('Branch/Commit Range Filtering', () => {
-    const result = run('node', ['cli.js', '--repo', testRepo.path, '--branch', 'HEAD~1..HEAD', '--json', '--no-count-lines'], {
-      cwd: root,
-      stdio: 'pipe',
-      timeout: 10000
-    });
+    const result = run(
+      'node',
+      ['cli.js', '--repo', testRepo.path, '--branch', 'HEAD~1..HEAD', '--json', '--no-count-lines'],
+      {
+        cwd: root,
+        stdio: 'pipe',
+        timeout: 10000
+      }
+    );
 
     const parsed = JSON.parse(result.stdout || '{}');
     if (parsed.totalCommits !== 1) {
@@ -394,11 +508,23 @@ async function runSmokeTests() {
 
   // Test 12: Author Filtering
   runner.test('Author Filtering', () => {
-    const result = run('node', ['cli.js', '--repo', testRepo.path, '--author', 'alice@example.com', '--json', '--no-count-lines'], {
-      cwd: root,
-      stdio: 'pipe',
-      timeout: 10000
-    });
+    const result = run(
+      'node',
+      [
+        'cli.js',
+        '--repo',
+        testRepo.path,
+        '--author',
+        'alice@example.com',
+        '--json',
+        '--no-count-lines'
+      ],
+      {
+        cwd: root,
+        stdio: 'pipe',
+        timeout: 10000
+      }
+    );
 
     const parsed = JSON.parse(result.stdout || '{}');
     if (parsed.totalCommits !== 1) {
@@ -409,12 +535,28 @@ async function runSmokeTests() {
   // Test 13: Chart Format Options
   runner.test('Chart Format Options', () => {
     const chartDir = path.join(root, 'test-charts');
-    try { fs.rmSync(chartDir, { recursive: true, force: true }); } catch(_) {}
+    try {
+      fs.rmSync(chartDir, { recursive: true, force: true });
+    } catch (_) {}
 
-    run('node', ['cli.js', '--repo', testRepo.path, '--charts-dir', chartDir, '--chart-format', 'svg', '--charts', '--no-count-lines'], {
-      cwd: root,
-      timeout: 15000
-    });
+    run(
+      'node',
+      [
+        'cli.js',
+        '--repo',
+        testRepo.path,
+        '--charts-dir',
+        chartDir,
+        '--chart-format',
+        'svg',
+        '--charts',
+        '--no-count-lines'
+      ],
+      {
+        cwd: root,
+        timeout: 15000
+      }
+    );
 
     const svgFiles = ['top-commits.svg', 'top-net.svg', 'heatmap.svg'];
     for (const file of svgFiles) {
@@ -423,16 +565,22 @@ async function runSmokeTests() {
     }
 
     // Cleanup
-    try { fs.rmSync(chartDir, { recursive: true, force: true }); } catch(_) {}
+    try {
+      fs.rmSync(chartDir, { recursive: true, force: true });
+    } catch (_) {}
   });
 
   // Test 14: Similarity Threshold
   runner.test('Similarity Threshold Processing', () => {
-    const result = run('node', ['cli.js', '--repo', testRepo.path, '--similarity', '0.5', '--json', '--no-count-lines'], {
-      cwd: root,
-      stdio: 'pipe',
-      timeout: 10000
-    });
+    const result = run(
+      'node',
+      ['cli.js', '--repo', testRepo.path, '--similarity', '0.5', '--json', '--no-count-lines'],
+      {
+        cwd: root,
+        stdio: 'pipe',
+        timeout: 10000
+      }
+    );
 
     const parsed = JSON.parse(result.stdout || '{}');
     validateJSON(parsed);
@@ -490,7 +638,7 @@ function cleanup(root) {
   for (const cleanupPath of cleanupPaths) {
     try {
       fs.rmSync(cleanupPath, { recursive: true, force: true });
-    } catch(_) {}
+    } catch (_) {}
   }
 }
 

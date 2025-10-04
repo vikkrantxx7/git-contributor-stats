@@ -19,12 +19,12 @@
 // Imports & Dependencies (ESM)
 // =====================
 import { spawnSync } from 'child_process';
+import { Command } from 'commander';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { Command } from 'commander';
-import stringSimilarity from 'string-similarity-js';
 import process from 'process';
+import stringSimilarity from 'string-similarity-js';
+import { fileURLToPath } from 'url';
 
 // =====================
 // Utility: Read package.json safely
@@ -53,7 +53,13 @@ function parseDateInput(input) {
     const unit = rel[2].toLowerCase();
     const now = new Date();
     const d = new Date(now);
-    const mult = unit.startsWith('day') ? 1 : unit.startsWith('week') ? 7 : unit.startsWith('month') ? 30 : 365;
+    const mult = unit.startsWith('day')
+      ? 1
+      : unit.startsWith('week')
+        ? 7
+        : unit.startsWith('month')
+          ? 30
+          : 365;
     d.setDate(now.getDate() - qty * mult);
     return d.toISOString();
   }
@@ -75,20 +81,29 @@ function runGit(repoPath, args) {
   const res = spawnSync('git', args, {
     cwd: repoPath,
     encoding: 'utf8',
-    maxBuffer: 1024 * 1024 * 1024,
+    maxBuffer: 1024 * 1024 * 1024
   });
   if (res.error) {
-    const msg = res.error && res.error.code === 'ENOENT'
-      ? 'Git is not installed or not in PATH.'
-      : `Failed to execute git: ${res.error.message}`;
+    const msg =
+      res.error && res.error.code === 'ENOENT'
+        ? 'Git is not installed or not in PATH.'
+        : `Failed to execute git: ${res.error.message}`;
     return { ok: false, error: msg, code: res.status ?? 2 };
   }
   if (res.status !== 0) {
     const stderr = (res.stderr || '').trim();
-    if (/does not have any commits yet/i.test(stderr) || /bad default revision 'HEAD'/i.test(stderr) || /ambiguous argument 'HEAD'/i.test(stderr)) {
+    if (
+      /does not have any commits yet/i.test(stderr) ||
+      /bad default revision 'HEAD'/i.test(stderr) ||
+      /ambiguous argument 'HEAD'/i.test(stderr)
+    ) {
       return { ok: true, stdout: '' };
     }
-    return { ok: false, error: (stderr || res.stdout || 'Unknown git error').trim(), code: res.status || 2 };
+    return {
+      ok: false,
+      error: (stderr || res.stdout || 'Unknown git error').trim(),
+      code: res.status || 2
+    };
   }
   return { ok: true, stdout: res.stdout };
 }
@@ -155,7 +170,7 @@ function parseGitLog(stdout) {
         additions: 0,
         deletions: 0,
         filesChanged: 0,
-        files: [],
+        files: []
       };
       expectHeader = false;
       continue;
@@ -180,33 +195,71 @@ function parseGitLog(stdout) {
 // =====================
 // Data Aggregation & Analytics
 // =====================
-function formatNumber(n) { return new Intl.NumberFormat().format(n); }
+function formatNumber(n) {
+  return new Intl.NumberFormat().format(n);
+}
 
 function printTable(contributors, meta, groupBy) {
-  const headers = ['#', groupBy === 'name' ? 'Author' : 'Email', 'Commits', '+Additions', '-Deletions', '±Changes'];
+  const headers = [
+    '#',
+    groupBy === 'name' ? 'Author' : 'Email',
+    'Commits',
+    '+Additions',
+    '-Deletions',
+    '±Changes'
+  ];
   const rows = [];
   contributors.forEach((c, idx) => {
-    const label = groupBy === 'name' ? (c.name || '(unknown)') : (c.key || '(unknown)');
-    rows.push([String(idx + 1), label, formatNumber(c.commits), formatNumber(c.additions), formatNumber(c.deletions), formatNumber(c.changes)]);
+    const label = groupBy === 'name' ? c.name || '(unknown)' : c.key || '(unknown)';
+    rows.push([
+      String(idx + 1),
+      label,
+      formatNumber(c.commits),
+      formatNumber(c.additions),
+      formatNumber(c.deletions),
+      formatNumber(c.changes)
+    ]);
   });
-  const colWidths = headers.map((h, i) => Math.max(h.length, ...rows.map(r => (r[i] ? String(r[i]).length : 0))));
-  const headerLine = headers.map((h, i) => (i === 1 ? String(h).padEnd(colWidths[i]) : String(h).padStart(colWidths[i]))).join('  ');
-  const sepLine = colWidths.map(w => '-'.repeat(w)).join('  ');
+  const colWidths = headers.map((h, i) =>
+    Math.max(h.length, ...rows.map((r) => (r[i] ? String(r[i]).length : 0)))
+  );
+  const headerLine = headers
+    .map((h, i) => (i === 1 ? String(h).padEnd(colWidths[i]) : String(h).padStart(colWidths[i])))
+    .join('  ');
+  const sepLine = colWidths.map((w) => '-'.repeat(w)).join('  ');
   console.log(headerLine);
   console.log(sepLine);
-  rows.forEach(r => { const line = r.map((cell, i) => (i === 1 ? String(cell).padEnd(colWidths[i]) : String(cell).padStart(colWidths[i]))).join('  '); console.log(line); });
+  rows.forEach((r) => {
+    const line = r
+      .map((cell, i) =>
+        i === 1 ? String(cell).padEnd(colWidths[i]) : String(cell).padStart(colWidths[i])
+      )
+      .join('  ');
+    console.log(line);
+  });
   console.log();
-  console.log(`Contributors: ${formatNumber(meta.contributors)} | Commits: ${formatNumber(meta.commits)} | Changes: ${formatNumber(meta.additions + meta.deletions)} (+${formatNumber(meta.additions)} / -${formatNumber(meta.deletions)})`);
+  console.log(
+    `Contributors: ${formatNumber(meta.contributors)} | Commits: ${formatNumber(meta.commits)} | Changes: ${formatNumber(meta.additions + meta.deletions)} (+${formatNumber(meta.additions)} / -${formatNumber(meta.deletions)})`
+  );
   if (meta.firstCommitDate || meta.lastCommitDate) {
-    console.log(`Range: ${meta.firstCommitDate ? new Date(meta.firstCommitDate).toISOString().slice(0,10) : '—'} → ${meta.lastCommitDate ? new Date(meta.lastCommitDate).toISOString().slice(0,10) : '—'}`);
+    console.log(
+      `Range: ${meta.firstCommitDate ? new Date(meta.firstCommitDate).toISOString().slice(0, 10) : '—'} → ${meta.lastCommitDate ? new Date(meta.lastCommitDate).toISOString().slice(0, 10) : '—'}`
+    );
   }
 }
 
 function printCSV(contributors, groupBy) {
-  const header = ['rank', groupBy === 'name' ? 'author' : 'email', 'commits', 'additions', 'deletions', 'changes'];
+  const header = [
+    'rank',
+    groupBy === 'name' ? 'author' : 'email',
+    'commits',
+    'additions',
+    'deletions',
+    'changes'
+  ];
   console.log(header.join(','));
   contributors.forEach((c, i) => {
-    const label = groupBy === 'name' ? (c.name || '') : (c.key || '');
+    const label = groupBy === 'name' ? c.name || '' : c.key || '';
     console.log([i + 1, label, c.commits, c.additions, c.deletions, c.changes].join(','));
   });
 }
@@ -214,9 +267,21 @@ function printCSV(contributors, groupBy) {
 function aggregateBasic(commits, groupBy) {
   const map = new Map();
   for (const c of commits) {
-    const key = groupBy === 'name' ? (c.authorName || '').trim() || '(unknown)' : (c.authorEmail || '').trim().toLowerCase() || '(unknown)';
+    const key =
+      groupBy === 'name'
+        ? (c.authorName || '').trim() || '(unknown)'
+        : (c.authorEmail || '').trim().toLowerCase() || '(unknown)';
     if (!map.has(key)) {
-      map.set(key, { key, name: c.authorName || '', emails: new Set(), commits: 0, additions: 0, deletions: 0, firstCommitDate: c.date || undefined, lastCommitDate: c.date || undefined });
+      map.set(key, {
+        key,
+        name: c.authorName || '',
+        emails: new Set(),
+        commits: 0,
+        additions: 0,
+        deletions: 0,
+        firstCommitDate: c.date || undefined,
+        lastCommitDate: c.date || undefined
+      });
     }
     const agg = map.get(key);
     agg.name = agg.name || c.authorName || '';
@@ -229,39 +294,51 @@ function aggregateBasic(commits, groupBy) {
       if (!agg.lastCommitDate || c.date > agg.lastCommitDate) agg.lastCommitDate = c.date;
     }
   }
-  return Array.from(map.values()).map(v => ({ key: v.key, name: v.name || (groupBy === 'name' ? v.key : ''), emails: Array.from(v.emails), commits: v.commits, additions: v.additions, deletions: v.deletions, changes: v.additions + v.deletions, firstCommitDate: v.firstCommitDate ? v.firstCommitDate.toISOString() : undefined, lastCommitDate: v.lastCommitDate ? v.lastCommitDate.toISOString() : undefined }));
+  return Array.from(map.values()).map((v) => ({
+    key: v.key,
+    name: v.name || (groupBy === 'name' ? v.key : ''),
+    emails: Array.from(v.emails),
+    commits: v.commits,
+    additions: v.additions,
+    deletions: v.deletions,
+    changes: v.additions + v.deletions,
+    firstCommitDate: v.firstCommitDate ? v.firstCommitDate.toISOString() : undefined,
+    lastCommitDate: v.lastCommitDate ? v.lastCommitDate.toISOString() : undefined
+  }));
 }
 
 function pickSortMetric(by) {
   switch ((by || '').toLowerCase()) {
-    case 'commits': return (a, b) => b.commits - a.commits || b.changes - a.changes;
+    case 'commits':
+      return (a, b) => b.commits - a.commits || b.changes - a.changes;
     case 'additions':
     case 'adds':
-    case 'lines-added': return (a, b) => b.additions - a.additions || b.commits - a.commits;
+    case 'lines-added':
+      return (a, b) => b.additions - a.additions || b.commits - a.commits;
     case 'deletions':
     case 'dels':
-    case 'lines-deleted': return (a, b) => b.deletions - a.deletions || b.commits - a.commits;
+    case 'lines-deleted':
+      return (a, b) => b.deletions - a.deletions || b.commits - a.commits;
     case 'changes':
     case 'delta':
-    default: return (a, b) => b.changes - a.changes || b.commits - a.commits;
+    default:
+      return (a, b) => b.changes - a.changes || b.commits - a.commits;
   }
 }
 
 // Similarity utils
 function levenshteinDistance(a, b) {
-  const m = a.length, n = b.length;
-  if (m === 0) return n; if (n === 0) return m;
+  const m = a.length,
+    n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
   const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
   for (let i = 0; i <= m; i++) dp[i][0] = i;
   for (let j = 0; j <= n; j++) dp[0][j] = j;
   for (let i = 1; i <= m; i++) {
     for (let j = 1; j <= n; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(
-        dp[i - 1][j] + 1,
-        dp[i][j - 1] + 1,
-        dp[i - 1][j - 1] + cost
-      );
+      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
     }
   }
   return dp[m][n];
@@ -269,11 +346,14 @@ function levenshteinDistance(a, b) {
 
 function similarityScore(a, b) {
   try {
-    if (typeof stringSimilarity.compareTwoStrings === 'function') return stringSimilarity.compareTwoStrings(a, b);
-  } catch (_) { /* fallback below */ }
+    if (typeof stringSimilarity.compareTwoStrings === 'function')
+      return stringSimilarity.compareTwoStrings(a, b);
+  } catch (_) {
+    /* fallback below */
+  }
   const maxLen = Math.max(a.length, b.length) || 1;
   const dist = levenshteinDistance(a, b);
-  return 1 - (dist / maxLen);
+  return 1 - dist / maxLen;
 }
 
 // Advanced analytics
@@ -306,7 +386,10 @@ function mergeSimilarContributors(contribMap, threshold) {
     let found = null;
     for (const mk of Object.keys(merged)) {
       const sim = similarityScore(norm, mk);
-      if (sim >= threshold) { found = mk; break; }
+      if (sim >= threshold) {
+        found = mk;
+        break;
+      }
     }
     if (found) {
       const target = merged[found];
@@ -322,7 +405,15 @@ function mergeSimilarContributors(contribMap, threshold) {
       }
     } else {
       const src = contribMap[k];
-      merged[norm] = { normalized: norm, name: src.name, email: src.email, commits: src.commits, added: src.added, deleted: src.deleted, files: { ...src.files } };
+      merged[norm] = {
+        normalized: norm,
+        name: src.name,
+        email: src.email,
+        commits: src.commits,
+        added: src.added,
+        deleted: src.deleted,
+        files: { ...src.files }
+      };
     }
   }
   return merged;
@@ -352,14 +443,19 @@ function buildAliasResolver(config) {
   } else if (config && typeof config === 'object') {
     if (Array.isArray(config.groups)) groups = config.groups;
     if (config.map && typeof config.map === 'object') mapEntries = Object.entries(config.map);
-    const flatMapCandidates = Object.keys(config).filter(k => k !== 'groups' && k !== 'map' && k !== 'canonical');
+    const flatMapCandidates = Object.keys(config).filter(
+      (k) => k !== 'groups' && k !== 'map' && k !== 'canonical'
+    );
     if (mapEntries.length === 0 && flatMapCandidates.length) {
       mapEntries = Object.entries(config).filter(([k]) => k !== 'groups' && k !== 'canonical');
     }
     if (config.canonical && typeof config.canonical === 'object') {
       for (const [canonKey, info] of Object.entries(config.canonical)) {
         const normKey = normalizeName(canonKey);
-        canonicalDetails.set(normKey, { name: info && info.name || undefined, email: info && info.email || undefined });
+        canonicalDetails.set(normKey, {
+          name: (info && info.name) || undefined,
+          email: (info && info.email) || undefined
+        });
       }
     }
   }
@@ -387,7 +483,7 @@ function buildAliasResolver(config) {
   // Process groups: each item in the group maps to the canonical (prefer first item that looks like email, otherwise first item)
   for (const g of groups) {
     if (!Array.isArray(g) || g.length === 0) continue;
-    const canonicalCandidate = g.find(s => typeof s === 'string' && s.includes('@')) || g[0];
+    const canonicalCandidate = g.find((s) => typeof s === 'string' && s.includes('@')) || g[0];
     const canonicalNorm = normalizeName(String(canonicalCandidate));
     for (const item of g) {
       if (typeof item !== 'string') continue;
@@ -395,7 +491,9 @@ function buildAliasResolver(config) {
         const lastSlash = item.lastIndexOf('/');
         const pattern = item.slice(1, lastSlash);
         const flags = item.slice(lastSlash + 1);
-        try { regexList.push({ regex: new RegExp(pattern, flags), canonical: canonicalNorm }); } catch (_) {}
+        try {
+          regexList.push({ regex: new RegExp(pattern, flags), canonical: canonicalNorm });
+        } catch (_) {}
       } else {
         aliasMap.set(normalizeName(item), canonicalNorm);
       }
@@ -441,7 +539,14 @@ function analyze(commits, similarityThreshold, aliasResolver, canonicalDetails) 
         displayName = info.name || displayName;
         displayEmail = info.email || displayEmail;
       }
-      contribMap[normalized] = { name: displayName, email: displayEmail, commits: 0, added: 0, deleted: 0, files: {} };
+      contribMap[normalized] = {
+        name: displayName,
+        email: displayEmail,
+        commits: 0,
+        added: 0,
+        deleted: 0,
+        files: {}
+      };
     }
     const contrib = contribMap[normalized];
     contrib.commits += 1;
@@ -460,7 +565,7 @@ function analyze(commits, similarityThreshold, aliasResolver, canonicalDetails) 
       contrib.added += f.added;
       contrib.deleted += f.deleted;
       if (!contrib.files[fname]) contrib.files[fname] = { changes: 0, added: 0, deleted: 0 };
-      contrib.files[fname].changes += (f.added + f.deleted);
+      contrib.files[fname].changes += f.added + f.deleted;
       contrib.files[fname].added += f.added;
       contrib.files[fname].deleted += f.deleted;
 
@@ -471,11 +576,28 @@ function analyze(commits, similarityThreshold, aliasResolver, canonicalDetails) 
 
   const merged = mergeSimilarContributors(contribMap, similarityThreshold);
 
-  const topContributors = Object.values(merged).map(c => {
-    const filesArr = Object.entries(c.files || {}).map(([filename, info]) => ({ filename, changes: info.changes, added: info.added, deleted: info.deleted }));
-    filesArr.sort((a, b) => b.changes - a.changes);
-    return { name: c.name, email: c.email, commits: c.commits, added: c.added, deleted: c.deleted, net: c.added - c.deleted, changes: (c.added + c.deleted), files: c.files, topFiles: filesArr };
-  }).sort((a, b) => b.commits - a.commits);
+  const topContributors = Object.values(merged)
+    .map((c) => {
+      const filesArr = Object.entries(c.files || {}).map(([filename, info]) => ({
+        filename,
+        changes: info.changes,
+        added: info.added,
+        deleted: info.deleted
+      }));
+      filesArr.sort((a, b) => b.changes - a.changes);
+      return {
+        name: c.name,
+        email: c.email,
+        commits: c.commits,
+        added: c.added,
+        deleted: c.deleted,
+        net: c.added - c.deleted,
+        changes: c.added + c.deleted,
+        files: c.files,
+        topFiles: filesArr
+      };
+    })
+    .sort((a, b) => b.commits - a.commits);
 
   const filesSingleOwner = [];
   for (const [file, ownersSet] of Object.entries(fileToContribs)) {
@@ -483,7 +605,10 @@ function analyze(commits, similarityThreshold, aliasResolver, canonicalDetails) 
     if (owners.length === 1) {
       const owner = owners[0];
       const m = merged[owner] || contribMap[owner] || { name: owner };
-      const changes = (merged[owner] && merged[owner].files && merged[owner].files[file]) ? merged[owner].files[file].changes : 0;
+      const changes =
+        merged[owner] && merged[owner].files && merged[owner].files[file]
+          ? merged[owner].files[file].changes
+          : 0;
       filesSingleOwner.push({ file, owner: m.name || owner, changes });
     }
   }
@@ -500,10 +625,18 @@ function analyze(commits, similarityThreshold, aliasResolver, canonicalDetails) 
     byAdditions: topBy('added'),
     byDeletions: topBy('deleted'),
     byNet: topBy('net'),
-    byChanges: topBy('changes'),
+    byChanges: topBy('changes')
   };
 
-  return { contributors: merged, topContributors, totalCommits, commitFrequency: { monthly: commitFrequencyMonthly, weekly: commitFrequencyWeekly }, heatmap, busFactor: { filesSingleOwner }, topStats };
+  return {
+    contributors: merged,
+    topContributors,
+    totalCommits,
+    commitFrequency: { monthly: commitFrequencyMonthly, weekly: commitFrequencyWeekly },
+    heatmap,
+    busFactor: { filesSingleOwner },
+    topStats
+  };
 }
 
 // =====================
@@ -513,22 +646,29 @@ function toCSV(rows, headers) {
   const esc = (v) => {
     if (v === null || v === undefined) return '';
     const s = String(v);
-    if (s.includes(',') || s.includes('"') || s.includes('\n')) return '"' + s.replace(/"/g, '""') + '"';
+    if (s.includes(',') || s.includes('"') || s.includes('\n'))
+      return '"' + s.replace(/"/g, '""') + '"';
     return s;
   };
   const lines = [];
   if (headers) lines.push(headers.join(','));
-  for (const r of rows) lines.push(headers.map(h => esc(r[h])).join(','));
+  for (const r of rows) lines.push(headers.map((h) => esc(r[h])).join(','));
   return lines.join('\n');
 }
 
-function ensureDir(dir) { if (!dir) return; if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true }); }
+function ensureDir(dir) {
+  if (!dir) return;
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
 
 function parseTopStatsMetrics(input) {
   const all = ['commits', 'additions', 'deletions', 'net', 'changes'];
   if (!input) return all;
   const set = new Set();
-  for (const part of String(input).split(',').map(s => s.trim().toLowerCase()).filter(Boolean)) {
+  for (const part of String(input)
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)) {
     if (all.includes(part)) set.add(part);
   }
   return set.size ? Array.from(set) : all;
@@ -536,14 +676,19 @@ function parseTopStatsMetrics(input) {
 
 function formatTopStatsLines(ts, metrics) {
   const lines = [];
-  const want = new Set(metrics && metrics.length ? metrics : ['commits', 'additions', 'deletions', 'net', 'changes']);
+  const want = new Set(
+    metrics && metrics.length ? metrics : ['commits', 'additions', 'deletions', 'net', 'changes']
+  );
 
   function line(label, entry, metricKey) {
     if (!entry) return `${label}: —`;
-    const metricVal = (entry && typeof entry[metricKey] === 'number')
-      ? entry[metricKey]
-      : (metricKey === 'net' ? ((entry.added || 0) - (entry.deleted || 0)) : undefined);
-    const suffix = (typeof metricVal === 'number') ? ` (${metricVal})` : '';
+    const metricVal =
+      entry && typeof entry[metricKey] === 'number'
+        ? entry[metricKey]
+        : metricKey === 'net'
+          ? (entry.added || 0) - (entry.deleted || 0)
+          : undefined;
+    const suffix = typeof metricVal === 'number' ? ` (${metricVal})` : '';
     const who = `${entry.name || '—'}${entry.email ? ` <${entry.email}>` : ''}`;
     return `${label}: ${who}${suffix}`;
   }
@@ -558,7 +703,9 @@ function formatTopStatsLines(ts, metrics) {
 
 function generateMarkdownReport(data, repoRoot, opts = {}) {
   const includeTopStats = opts.includeTopStats !== false;
-  const topMetrics = Array.isArray(opts.topStatsMetrics) ? opts.topStatsMetrics : ['commits', 'additions', 'deletions', 'net', 'changes'];
+  const topMetrics = Array.isArray(opts.topStatsMetrics)
+    ? opts.topStatsMetrics
+    : ['commits', 'additions', 'deletions', 'net', 'changes'];
   const lines = [];
 
   lines.push('# Git Contributor Stats');
@@ -577,8 +724,13 @@ function generateMarkdownReport(data, repoRoot, opts = {}) {
     const want = new Set(topMetrics);
     function lineFor(label, entry, metricKey) {
       if (!entry) return `- ${label}: —`;
-      const metricVal = (entry && typeof entry[metricKey] === 'number') ? entry[metricKey] : (metricKey === 'net' ? (entry.added || 0) - (entry.deleted || 0) : undefined);
-      const suffix = (typeof metricVal === 'number') ? ` (${metricVal})` : '';
+      const metricVal =
+        entry && typeof entry[metricKey] === 'number'
+          ? entry[metricKey]
+          : metricKey === 'net'
+            ? (entry.added || 0) - (entry.deleted || 0)
+            : undefined;
+      const suffix = typeof metricVal === 'number' ? ` (${metricVal})` : '';
       const who = `${entry.name || '—'}${entry.email ? ` <${entry.email}>` : ''}`;
       return `- ${label}: ${who}${suffix}`;
     }
@@ -598,8 +750,13 @@ function generateMarkdownReport(data, repoRoot, opts = {}) {
   lines.push('|---|---:|---:|---:|---:|---|');
   for (const c of data.topContributors) {
     const net = (c.added || 0) - (c.deleted || 0);
-    const topFiles = (c.topFiles || []).slice(0, 5).map(f => `${f.filename}(${f.changes})`).join(', ');
-    lines.push(`| ${c.name} <${c.email}> | ${c.commits || 0} | ${c.added || 0} | ${c.deleted || 0} | ${net} | ${topFiles} |`);
+    const topFiles = (c.topFiles || [])
+      .slice(0, 5)
+      .map((f) => `${f.filename}(${f.changes})`)
+      .join(', ');
+    lines.push(
+      `| ${c.name} <${c.email}> | ${c.commits || 0} | ${c.added || 0} | ${c.deleted || 0} | ${net} | ${topFiles} |`
+    );
   }
   lines.push('');
   lines.push('## Bus factor / file ownership');
@@ -609,14 +766,16 @@ function generateMarkdownReport(data, repoRoot, opts = {}) {
   if (data.busFactor.filesSingleOwner.length > 0) {
     lines.push('| File | Owner | Changes |');
     lines.push('|---|---|---:|');
-    for (const f of data.busFactor.filesSingleOwner.slice(0, 200)) lines.push(`| ${f.file} | ${f.owner} | ${f.changes} |`);
+    for (const f of data.busFactor.filesSingleOwner.slice(0, 200))
+      lines.push(`| ${f.file} | ${f.owner} | ${f.changes} |`);
   }
   lines.push('');
   lines.push('## Commit frequency (monthly)');
   lines.push('');
   lines.push('| Month | Commits |');
   lines.push('|---|---:|');
-  for (const k of Object.keys(data.commitFrequency.monthly)) lines.push(`| ${k} | ${data.commitFrequency.monthly[k]} |`);
+  for (const k of Object.keys(data.commitFrequency.monthly))
+    lines.push(`| ${k} | ${data.commitFrequency.monthly[k]} |`);
   lines.push('');
   lines.push('## Heatmap (weekday x hour) - rows: Sunday(0) .. Saturday(6)');
   lines.push('');
@@ -628,9 +787,12 @@ function generateMarkdownReport(data, repoRoot, opts = {}) {
 
 function generateHTMLReport(data, repoRoot, opts = {}) {
   const includeTopStats = opts.includeTopStats !== false;
-  const topMetrics = Array.isArray(opts.topStatsMetrics) ? opts.topStatsMetrics : ['commits', 'additions', 'deletions', 'net', 'changes'];
+  const topMetrics = Array.isArray(opts.topStatsMetrics)
+    ? opts.topStatsMetrics
+    : ['commits', 'additions', 'deletions', 'net', 'changes'];
 
-  const topStatsHTML = includeTopStats ? `
+  const topStatsHTML = includeTopStats
+    ? `
   <div>
     <h3>Top stats</h3>
     <ul class="topstats">
@@ -639,9 +801,14 @@ function generateHTMLReport(data, repoRoot, opts = {}) {
         const want = new Set(topMetrics);
         function item(label, entry, key) {
           if (!entry) return `<li>${label}: —</li>`;
-          const metricVal = (typeof entry[key] === 'number') ? entry[key] : (key === 'net' ? ((entry.added || 0) - (entry.deleted || 0)) : '');
-          const who = `${(entry.name || '—')}${entry.email ? ` &lt;${entry.email}&gt;` : ''}`;
-          const suffix = (metricVal !== '' && metricVal !== undefined) ? ` (${metricVal})` : '';
+          const metricVal =
+            typeof entry[key] === 'number'
+              ? entry[key]
+              : key === 'net'
+                ? (entry.added || 0) - (entry.deleted || 0)
+                : '';
+          const who = `${entry.name || '—'}${entry.email ? ` &lt;${entry.email}&gt;` : ''}`;
+          const suffix = metricVal !== '' && metricVal !== undefined ? ` (${metricVal})` : '';
           return `<li>${label}: ${who}${suffix}</li>`;
         }
         const out = [];
@@ -654,7 +821,8 @@ function generateHTMLReport(data, repoRoot, opts = {}) {
       })()}
     </ul>
   </div>
-  ` : '';
+  `
+    : '';
 
   return `<!doctype html>
 <html lang="en">
@@ -698,7 +866,10 @@ function generateHTMLReport(data, repoRoot, opts = {}) {
   <div>
     <h3>Bus factor: files with single owner (top 200)</h3>
     <ol>
-      ${data.busFactor.filesSingleOwner.slice(0, 200).map(f => `<li>${f.file} — ${f.owner} (${f.changes} changes)</li>`).join('\n')}
+      ${data.busFactor.filesSingleOwner
+        .slice(0, 200)
+        .map((f) => `<li>${f.file} — ${f.owner} (${f.changes} changes)</li>`)
+        .join('\n')}
     </ol>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -758,7 +929,9 @@ function createCanvas(format, width, height) {
     height,
     type,
     chartCallback: (ChartJS) => {
-      try { if (ChartJS && registerables) ChartJS.register(...registerables); } catch (_) {}
+      try {
+        if (ChartJS && registerables) ChartJS.register(...registerables);
+      } catch (_) {}
     }
   });
 }
@@ -777,7 +950,7 @@ async function renderBarChartImage(format, title, labels, values, filePath, opti
   try {
     if (!labels || !values || labels.length === 0) {
       if (options.verbose) console.error(`[warn] No data for bar chart: ${title}`);
-      labels = ["No data"];
+      labels = ['No data'];
       values = [0];
     }
 
@@ -799,8 +972,11 @@ async function renderBarChartImage(format, title, labels, values, filePath, opti
       options: {
         plugins: { title: { display: true, text: title }, legend: { display: false } },
         responsive: false,
-        scales: { x: { ticks: { maxRotation: 45, minRotation: 45, autoSkip: false } }, y: { beginAtZero: true } },
-      },
+        scales: {
+          x: { ticks: { maxRotation: 45, minRotation: 45, autoSkip: false } },
+          y: { beginAtZero: true }
+        }
+      }
     };
     const mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
 
@@ -854,14 +1030,15 @@ async function renderHeatmapImage(format, heatmap, filePath, options = {}) {
     const datasetForDay = (row, i) => ({
       label: days[i],
       data: row,
-      backgroundColor: row.map(val => {
-        const alpha = val > 0 ? Math.min(1, 0.15 + 0.85 * (val / Math.max(1, Math.max(...row)))) : 0.05;
+      backgroundColor: row.map((val) => {
+        const alpha =
+          val > 0 ? Math.min(1, 0.15 + 0.85 * (val / Math.max(1, Math.max(...row)))) : 0.05;
         return `rgba(78,121,167,${alpha})`;
       }),
       borderWidth: 0,
       type: 'bar',
       barPercentage: 1.0,
-      categoryPercentage: 1.0,
+      categoryPercentage: 1.0
     });
     const data = { labels: hours, datasets: heatmap.map(datasetForDay) };
     const config = {
@@ -869,10 +1046,13 @@ async function renderHeatmapImage(format, heatmap, filePath, options = {}) {
       data,
       options: {
         indexAxis: 'y',
-        plugins: { title: { display: true, text: 'Commit Activity Heatmap (weekday x hour)' }, legend: { display: false } },
+        plugins: {
+          title: { display: true, text: 'Commit Activity Heatmap (weekday x hour)' },
+          legend: { display: false }
+        },
         responsive: false,
-        scales: { x: { stacked: true, beginAtZero: true }, y: { stacked: true } },
-      },
+        scales: { x: { stacked: true, beginAtZero: true }, y: { stacked: true } }
+      }
     };
     const mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
 
@@ -895,7 +1075,9 @@ async function renderHeatmapImage(format, heatmap, filePath, options = {}) {
 // =====================
 // SVG Chart Generation Utilities (Pure SVG Fallbacks)
 // =====================
-function svgEscape(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function svgEscape(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
 
 function generateBarChartSVG(title, labels, values, options = {}) {
   const maxBars = Math.min(labels.length, options.limit || 20);
@@ -908,18 +1090,28 @@ function generateBarChartSVG(title, labels, values, options = {}) {
   const chartH = height - margin.top - margin.bottom;
   const maxVal = Math.max(1, ...values);
   const denom = Math.max(1, maxBars);
-  const barW = chartW / denom * 0.7;
-  const gap = chartW / denom * 0.3;
+  const barW = (chartW / denom) * 0.7;
+  const gap = (chartW / denom) * 0.3;
 
   const svg = [];
-  svg.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`);
-  svg.push(`<style>text{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:12px} .title{font-size:16px;font-weight:700}</style>`);
+  svg.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`
+  );
+  svg.push(
+    `<style>text{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:12px} .title{font-size:16px;font-weight:700}</style>`
+  );
   svg.push(`<rect width="100%" height="100%" fill="#fff"/>`);
-  svg.push(`<text class="title" x="${margin.left}" y="${margin.top - 12}">${svgEscape(title)}</text>`);
+  svg.push(
+    `<text class="title" x="${margin.left}" y="${margin.top - 12}">${svgEscape(title)}</text>`
+  );
 
   // axes
-  svg.push(`<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + chartH}" stroke="#333"/>`);
-  svg.push(`<line x1="${margin.left}" y1="${margin.top + chartH}" x2="${margin.left + chartW}" y2="${margin.top + chartH}" stroke="#333"/>`);
+  svg.push(
+    `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + chartH}" stroke="#333"/>`
+  );
+  svg.push(
+    `<line x1="${margin.left}" y1="${margin.top + chartH}" x2="${margin.left + chartW}" y2="${margin.top + chartH}" stroke="#333"/>`
+  );
 
   // bars
   labels.forEach((lab, i) => {
@@ -928,19 +1120,25 @@ function generateBarChartSVG(title, labels, values, options = {}) {
     const y = margin.top + (chartH - h);
     svg.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="#4e79a7"/>`);
     svg.push(`<text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle">${values[i]}</text>`);
-    const labText = (lab.length > 16) ? lab.slice(0, 16) + '…' : lab;
-    svg.push(`<g transform="translate(${x + barW / 2},${margin.top + chartH + 4}) rotate(45)"><text text-anchor="start">${svgEscape(labText)}</text></g>`);
+    const labText = lab.length > 16 ? lab.slice(0, 16) + '…' : lab;
+    svg.push(
+      `<g transform="translate(${x + barW / 2},${margin.top + chartH + 4}) rotate(45)"><text text-anchor="start">${svgEscape(labText)}</text></g>`
+    );
   });
 
   if (maxBars === 0) {
-    svg.push(`<text x="${margin.left + chartW / 2}" y="${margin.top + chartH / 2}" text-anchor="middle" fill="#666">No data</text>`);
+    svg.push(
+      `<text x="${margin.left + chartW / 2}" y="${margin.top + chartH / 2}" text-anchor="middle" fill="#666">No data</text>`
+    );
   }
 
   // y ticks
   for (let t = 0; t <= 4; t++) {
     const val = Math.round((t / 4) * maxVal);
     const yy = margin.top + chartH - Math.round((t / 4) * chartH);
-    svg.push(`<line x1="${margin.left - 5}" y1="${yy}" x2="${margin.left}" y2="${yy}" stroke="#333"/>`);
+    svg.push(
+      `<line x1="${margin.left - 5}" y1="${yy}" x2="${margin.left}" y2="${yy}" stroke="#333"/>`
+    );
     svg.push(`<text x="${margin.left - 8}" y="${yy + 4}" text-anchor="end">${val}</text>`);
   }
   svg.push(`</svg>`);
@@ -948,7 +1146,8 @@ function generateBarChartSVG(title, labels, values, options = {}) {
 }
 
 function generateHeatmapSVG(heatmap) {
-  const cellW = 26, cellH = 20;
+  const cellW = 26,
+    cellH = 20;
   const margin = { top: 28, right: 10, bottom: 10, left: 28 };
   const width = margin.left + margin.right + 24 * cellW;
   const height = margin.top + margin.bottom + 7 * cellH;
@@ -956,22 +1155,35 @@ function generateHeatmapSVG(heatmap) {
   const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   const svg = [];
-  svg.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`);
-  svg.push(`<style>text{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:10px}</style>`);
+  svg.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`
+  );
+  svg.push(
+    `<style>text{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:10px}</style>`
+  );
 
   // hour headers
   for (let h = 0; h < 24; h++) {
-    svg.push(`<text x="${margin.left + h * cellW + 6}" y="${margin.top - 10}" text-anchor="middle">${h}</text>`);
+    svg.push(
+      `<text x="${margin.left + h * cellW + 6}" y="${margin.top - 10}" text-anchor="middle">${h}</text>`
+    );
   }
 
   for (let d = 0; d < 7; d++) {
-    svg.push(`<text x="${margin.left - 6}" y="${margin.top + d * cellH + 14}" text-anchor="end">${days[d]}</text>`);
+    svg.push(
+      `<text x="${margin.left - 6}" y="${margin.top + d * cellH + 14}" text-anchor="end">${days[d]}</text>`
+    );
     for (let h = 0; h < 24; h++) {
       const val = heatmap[d][h] || 0;
       const intensity = Math.round((val / max) * 200);
       const fill = `rgb(${255 - intensity},255,${255 - intensity})`;
-      svg.push(`<rect x="${margin.left + h * cellW}" y="${margin.top + d * cellH}" width="${cellW - 1}" height="${cellH - 1}" fill="${fill}"/>`);
-      if (val > 0) svg.push(`<text x="${margin.left + h * cellW + (cellW / 2)}" y="${margin.top + d * cellH + 14}" text-anchor="middle">${val}</text>`);
+      svg.push(
+        `<rect x="${margin.left + h * cellW}" y="${margin.top + d * cellH}" width="${cellW - 1}" height="${cellH - 1}" fill="${fill}"/>`
+      );
+      if (val > 0)
+        svg.push(
+          `<text x="${margin.left + h * cellW + cellW / 2}" y="${margin.top + d * cellH + 14}" text-anchor="middle">${val}</text>`
+        );
     }
   }
   svg.push(`</svg>`);
@@ -979,16 +1191,31 @@ function generateHeatmapSVG(heatmap) {
 }
 
 function computeMeta(contributors) {
-  let commits = 0, additions = 0, deletions = 0;
-  let first = undefined, last = undefined;
+  let commits = 0,
+    additions = 0,
+    deletions = 0;
+  let first, last;
   for (const c of contributors) {
     commits += c.commits || 0;
     additions += c.additions || 0;
     deletions += c.deletions || 0;
-    if (c.firstCommitDate) { const d = new Date(c.firstCommitDate); if (!first || d < first) first = d; }
-    if (c.lastCommitDate) { const d = new Date(c.lastCommitDate); if (!last || d > last) last = d; }
+    if (c.firstCommitDate) {
+      const d = new Date(c.firstCommitDate);
+      if (!first || d < first) first = d;
+    }
+    if (c.lastCommitDate) {
+      const d = new Date(c.lastCommitDate);
+      if (!last || d > last) last = d;
+    }
   }
-  return { contributors: contributors.length, commits, additions, deletions, firstCommitDate: first ? first.toISOString() : undefined, lastCommitDate: last ? last.toISOString() : undefined };
+  return {
+    contributors: contributors.length,
+    commits,
+    additions,
+    deletions,
+    firstCommitDate: first ? first.toISOString() : undefined,
+    lastCommitDate: last ? last.toISOString() : undefined
+  };
 }
 
 // =====================
@@ -1006,7 +1233,9 @@ async function countTotalLines(repoPath) {
         if (!stat.isFile() || stat.size > 50 * 1024 * 1024) continue; // skip huge files
         const content = fs.readFileSync(abs, 'utf8');
         total += content.split(/\r?\n/).length;
-      } catch (_) { /* ignore */ }
+      } catch (_) {
+        /* ignore */
+      }
     }
     return total;
   } catch (_) {
@@ -1035,41 +1264,98 @@ async function main(argv) {
     .version(pkg.version || '0.0.0')
     .argument('[paths...]', 'Optional pathspec(s) to limit stats to certain files or directories')
     .option('-r, --repo <repoPath>', 'Path to the Git repository (default: current directory)', '.')
-    .option('-b, --branch <name>', 'Branch or commit range to analyze (e.g., main or main..feature)')
-    .option('--since <when>', "Only include commits more recent than <when> (e.g., '2024-01-01', '30.days', '2.weeks')")
+    .option(
+      '-b, --branch <name>',
+      'Branch or commit range to analyze (e.g., main or main..feature)'
+    )
+    .option(
+      '--since <when>',
+      "Only include commits more recent than <when> (e.g., '2024-01-01', '30.days', '2.weeks')"
+    )
     .option('--until <when>', "Only include commits older than <when> (e.g., '2024-06-30')")
-    .option('-a, --author <pattern>', 'Limit to commits by author (string or regex supported by git)')
+    .option(
+      '-a, --author <pattern>',
+      'Limit to commits by author (string or regex supported by git)'
+    )
     .option('--include-merges', 'Include merge commits (excluded by default)', false)
     .option('-g, --group-by <field>', 'Grouping key: email | name', 'email')
-    .option('-s, --sort-by <metric>', 'Sort by: changes | commits | additions | deletions', 'changes')
-    .option('-t, --top <n>', 'Limit to top N contributors (for table/CSV stdout)', (v) => parseInt(v, 10), undefined)
+    .option(
+      '-s, --sort-by <metric>',
+      'Sort by: changes | commits | additions | deletions',
+      'changes'
+    )
+    .option(
+      '-t, --top <n>',
+      'Limit to top N contributors (for table/CSV stdout)',
+      (v) => parseInt(v, 10),
+      undefined
+    )
     .option('-f, --format <kind>', 'Output format to stdout: table | json | csv', 'table')
     .option('--json', 'Print comprehensive JSON analysis to stdout', false)
     .option('--csv <csvPath>', 'Write CSV contributors summary to file')
     .option('--md <mdPath>', 'Write Markdown report to file')
     .option('--html <htmlPath>', 'Write HTML dashboard report to file')
-    .option('--out-dir <outDir>', 'Write selected outputs into the directory (uses default filenames)')
-    .option('--svg', 'Write SVG charts (top commits, net lines, heatmap) to out-dir (or ./charts if no out-dir)', false)
-    .option('--svg-dir <svgDir>', 'Directory to write SVG charts (overrides default when --svg is set)')
+    .option(
+      '--out-dir <outDir>',
+      'Write selected outputs into the directory (uses default filenames)'
+    )
+    .option(
+      '--svg',
+      'Write SVG charts (top commits, net lines, heatmap) to out-dir (or ./charts if no out-dir)',
+      false
+    )
+    .option(
+      '--svg-dir <svgDir>',
+      'Directory to write SVG charts (overrides default when --svg is set)'
+    )
     // New chart options (SVG default). --svg/--svg-dir kept for backward compatibility
-    .option('--charts', 'Generate charts (defaults to SVG). Use --chart-format to switch formats.', false)
-    .option('--charts-dir <chartsDir>', 'Directory to write charts (overrides default when --charts is set)')
-    .option('--chart-format <format>', 'Chart output format: svg | png | both (default: svg)', 'svg')
-    .option('--similarity <threshold>', 'Name merge similarity threshold (0..1)', (v) => parseFloat(v), 0.85)
-    .option('--generate-workflow', 'Create a sample GitHub Actions workflow under .github/workflows/', false)
+    .option(
+      '--charts',
+      'Generate charts (defaults to SVG). Use --chart-format to switch formats.',
+      false
+    )
+    .option(
+      '--charts-dir <chartsDir>',
+      'Directory to write charts (overrides default when --charts is set)'
+    )
+    .option(
+      '--chart-format <format>',
+      'Chart output format: svg | png | both (default: svg)',
+      'svg'
+    )
+    .option(
+      '--similarity <threshold>',
+      'Name merge similarity threshold (0..1)',
+      (v) => parseFloat(v),
+      0.85
+    )
+    .option(
+      '--generate-workflow',
+      'Create a sample GitHub Actions workflow under .github/workflows/',
+      false
+    )
     .option('--no-count-lines', 'Skip counting total lines in repo (faster)')
     .option('--no-top-stats', 'Omit the Top stats section in Markdown/HTML and stdout table output')
-    .option('--top-stats <list>', 'Top stats metrics to show (comma-separated): commits, additions, deletions, net, changes')
+    .option(
+      '--top-stats <list>',
+      'Top stats metrics to show (comma-separated): commits, additions, deletions, net, changes'
+    )
     .option('--alias-file <aliasFile>', 'Path to alias mapping JSON file')
     .option('-v, --verbose', 'Verbose logging', false)
-    .addHelpText('after', `\nExamples:\n  # Top 10 contributors in the current repo\n  git-contributor-stats --top 10\n\n  # Only for the last 90 days on main\n  git-contributor-stats -b main --since 90.days\n\n  # Stats for a specific folder, as JSON (comprehensive)\n  git-contributor-stats src/ --json\n\n  # Generate Markdown and HTML reports into reports/ and write SVG charts\n  git-contributor-stats --out-dir reports --md reports/report.md --html reports/report.html --svg\n\n  # Merge similar contributor names (default threshold 0.85)\n  git-contributor-stats --similarity 0.9\n`);
+    .addHelpText(
+      'after',
+      `\nExamples:\n  # Top 10 contributors in the current repo\n  git-contributor-stats --top 10\n\n  # Only for the last 90 days on main\n  git-contributor-stats -b main --since 90.days\n\n  # Stats for a specific folder, as JSON (comprehensive)\n  git-contributor-stats src/ --json\n\n  # Generate Markdown and HTML reports into reports/ and write SVG charts\n  git-contributor-stats --out-dir reports --md reports/report.md --html reports/report.html --svg\n\n  # Merge similar contributor names (default threshold 0.85)\n  git-contributor-stats --similarity 0.9\n`
+    );
 
   program.parse(argv);
   const opts = program.opts();
   const paths = program.args || [];
 
   const repo = path.resolve(process.cwd(), opts.repo || '.');
-  if (!isGitRepo(repo)) { console.error(`Not a Git repository: ${repo}`); process.exit(2); }
+  if (!isGitRepo(repo)) {
+    console.error(`Not a Git repository: ${repo}`);
+    process.exit(2);
+  }
 
   // Load alias configuration (explicit path or default file in repo root)
   let aliasConfig = null;
@@ -1088,11 +1374,21 @@ async function main(argv) {
   const since = parseDateInput(opts.since);
   const until = parseDateInput(opts.until);
 
-  const gitArgs = buildGitLogArgs({ branch: opts.branch, since, until, author: opts.author, includeMerges: !!opts.includeMerges, paths });
+  const gitArgs = buildGitLogArgs({
+    branch: opts.branch,
+    since,
+    until,
+    author: opts.author,
+    includeMerges: !!opts.includeMerges,
+    paths
+  });
   debugLog('git args:', gitArgs);
 
   const result = runGit(repo, gitArgs);
-  if (!result.ok) { console.error(result.error); process.exit(result.code || 2); }
+  if (!result.ok) {
+    console.error(result.error);
+    process.exit(result.code || 2);
+  }
 
   const commits = parseGitLog(result.stdout);
   debugLog('parsed commits: %d', commits.length);
@@ -1102,11 +1398,17 @@ async function main(argv) {
   let contributors = aggregateBasic(commits, groupBy);
   const sorter = pickSortMetric(opts.sortBy);
   contributors.sort(sorter);
-  if (opts.top && Number.isFinite(opts.top) && opts.top > 0) contributors = contributors.slice(0, opts.top);
+  if (opts.top && Number.isFinite(opts.top) && opts.top > 0)
+    contributors = contributors.slice(0, opts.top);
   const meta = computeMeta(contributors);
 
   // Advanced analysis with alias resolution
-  const analysis = analyze(commits, Number.isFinite(opts.similarity) ? opts.similarity : 0.85, aliasResolveFn, canonicalDetails);
+  const analysis = analyze(
+    commits,
+    Number.isFinite(opts.similarity) ? opts.similarity : 0.85,
+    aliasResolveFn,
+    canonicalDetails
+  );
 
   // Count repo total lines (unless disabled)
   let totalLines = 0;
@@ -1118,7 +1420,16 @@ async function main(argv) {
   const repoRoot = repoRootResult.ok ? repoRootResult.stdout.trim() : repo;
 
   const final = {
-    meta: { generatedAt: new Date().toISOString(), repo: repoRoot, branch: opts.branch || (runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']).stdout || '').trim() || null, since: since || null, until: until || null },
+    meta: {
+      generatedAt: new Date().toISOString(),
+      repo: repoRoot,
+      branch:
+        opts.branch ||
+        (runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']).stdout || '').trim() ||
+        null,
+      since: since || null,
+      until: until || null
+    },
     totalCommits: analysis.totalCommits,
     totalLines: totalLines,
     contributors: analysis.contributors,
@@ -1126,7 +1437,7 @@ async function main(argv) {
     topStats: analysis.topStats,
     commitFrequency: analysis.commitFrequency,
     heatmap: analysis.heatmap,
-    busFactor: analysis.busFactor,
+    busFactor: analysis.busFactor
   };
 
   // Write files if requested
@@ -1137,13 +1448,16 @@ async function main(argv) {
 
   if (writeCSVPath) {
     ensureDir(path.dirname(writeCSVPath));
-    const contribRows = analysis.topContributors.map(c => ({
+    const contribRows = analysis.topContributors.map((c) => ({
       Contributor: `${c.name} <${c.email}>`,
       Commits: c.commits,
       Added: c.added,
       Deleted: c.deleted,
-      Net: (c.added - c.deleted),
-      TopFiles: c.topFiles.slice(0, 5).map(f => `${f.filename}(${f.changes})`).join('; ')
+      Net: c.added - c.deleted,
+      TopFiles: c.topFiles
+        .slice(0, 5)
+        .map((f) => `${f.filename}(${f.changes})`)
+        .join('; ')
     }));
     const headers = ['Contributor', 'Commits', 'Added', 'Deleted', 'Net', 'TopFiles'];
     const csv = toCSV(contribRows, headers);
@@ -1155,15 +1469,26 @@ async function main(argv) {
 
   if (writeMDPath) {
     ensureDir(path.dirname(writeMDPath));
-    fs.writeFileSync(path.join(path.dirname(writeMDPath), 'debug.txt'), `[debug] opts.topStats=${opts.topStats}, includeTopStats=${opts.topStats}\n`);
-    const md = generateMarkdownReport({ ...final, contributors: analysis.contributors, topContributors: analysis.topContributors }, repoRoot, { includeTopStats: opts.topStats, topStatsMetrics });
+    fs.writeFileSync(
+      path.join(path.dirname(writeMDPath), 'debug.txt'),
+      `[debug] opts.topStats=${opts.topStats}, includeTopStats=${opts.topStats}\n`
+    );
+    const md = generateMarkdownReport(
+      { ...final, contributors: analysis.contributors, topContributors: analysis.topContributors },
+      repoRoot,
+      { includeTopStats: opts.topStats, topStatsMetrics }
+    );
     fs.writeFileSync(writeMDPath, md, 'utf8');
     console.error(`Wrote Markdown report to ${writeMDPath}`);
   }
 
   if (writeHTMLPath) {
     ensureDir(path.dirname(writeHTMLPath));
-    const html = generateHTMLReport({ ...final, contributors: analysis.contributors, topContributors: analysis.topContributors }, repoRoot, { includeTopStats: opts.topStats, topStatsMetrics });
+    const html = generateHTMLReport(
+      { ...final, contributors: analysis.contributors, topContributors: analysis.topContributors },
+      repoRoot,
+      { includeTopStats: opts.topStats, topStatsMetrics }
+    );
     fs.writeFileSync(writeHTMLPath, html, 'utf8');
     console.error(`Wrote HTML report to ${writeHTMLPath}`);
   }
@@ -1172,57 +1497,97 @@ async function main(argv) {
   const chartsRequested = opts.charts || opts.svg || opts.svgDir;
   if (chartsRequested) {
     debugLog('Charts requested, starting generation...');
-    const chartsDir = outDir ? outDir : (opts.chartsDir || opts.svgDir || path.join(process.cwd(), 'charts'));
+    const chartsDir = outDir
+      ? outDir
+      : opts.chartsDir || opts.svgDir || path.join(process.cwd(), 'charts');
     debugLog('Charts directory:', chartsDir);
     ensureDir(chartsDir);
     const formatOpt = String(opts.chartFormat || 'svg').toLowerCase();
     const formats = formatOpt === 'both' ? ['svg', 'png'] : [formatOpt === 'png' ? 'png' : 'svg'];
     debugLog('Chart formats:', formats.join(', '));
     if ((opts.svg || opts.svgDir) && !opts.charts && !opts.chartFormat && !opts.chartsDir) {
-      console.error('[warn] --svg/--svg-dir are deprecated; prefer --charts/--charts-dir/--chart-format');
+      console.error(
+        '[warn] --svg/--svg-dir are deprecated; prefer --charts/--charts-dir/--chart-format'
+      );
     }
-    const names = analysis.topContributors.map(c => c.name || '');
-    const commitsVals = analysis.topContributors.map(c => c.commits || 0);
-    const netVals = analysis.topContributors.map(c => (c.added || 0) - (c.deleted || 0));
+    const names = analysis.topContributors.map((c) => c.name || '');
+    const commitsVals = analysis.topContributors.map((c) => c.commits || 0);
+    const netVals = analysis.topContributors.map((c) => (c.added || 0) - (c.deleted || 0));
     debugLog('Contributors:', names.length, 'commits:', commitsVals.length, 'net:', netVals.length);
     const chartPromises = [];
     for (const fmt of formats) {
       const ext = fmt === 'svg' ? '.svg' : '.png';
       debugLog('Rendering', fmt, 'charts...');
-      chartPromises.push(renderBarChartImage(fmt, 'Top contributors by commits', names, commitsVals, path.join(chartsDir, `top-commits${ext}`), { limit: 25, verbose: opts.verbose }));
-      chartPromises.push(renderBarChartImage(fmt, 'Top contributors by net lines', names, netVals, path.join(chartsDir, `top-net${ext}`), { limit: 25, verbose: opts.verbose }));
-      chartPromises.push(renderHeatmapImage(fmt, analysis.heatmap, path.join(chartsDir, `heatmap${ext}`), { verbose: opts.verbose }));
+      chartPromises.push(
+        renderBarChartImage(
+          fmt,
+          'Top contributors by commits',
+          names,
+          commitsVals,
+          path.join(chartsDir, `top-commits${ext}`),
+          { limit: 25, verbose: opts.verbose }
+        )
+      );
+      chartPromises.push(
+        renderBarChartImage(
+          fmt,
+          'Top contributors by net lines',
+          names,
+          netVals,
+          path.join(chartsDir, `top-net${ext}`),
+          { limit: 25, verbose: opts.verbose }
+        )
+      );
+      chartPromises.push(
+        renderHeatmapImage(fmt, analysis.heatmap, path.join(chartsDir, `heatmap${ext}`), {
+          verbose: opts.verbose
+        })
+      );
     }
     await Promise.all(chartPromises);
     // Safety net: ensure SVG files exist even if rendering failed silently
     if (formats.includes('svg')) {
-      const names = analysis.topContributors.map(c => c.name || '');
-      const commitsVals = analysis.topContributors.map(c => c.commits || 0);
-      const netVals = analysis.topContributors.map(c => (c.added || 0) - (c.deleted || 0));
+      const names = analysis.topContributors.map((c) => c.name || '');
+      const commitsVals = analysis.topContributors.map((c) => c.commits || 0);
+      const netVals = analysis.topContributors.map((c) => (c.added || 0) - (c.deleted || 0));
       const svgCommits = path.join(chartsDir, 'top-commits.svg');
       const svgNet = path.join(chartsDir, 'top-net.svg');
       const svgHeat = path.join(chartsDir, 'heatmap.svg');
       try {
         if (!fs.existsSync(svgCommits)) {
           debugLog('Fallback: writing', svgCommits);
-          fs.writeFileSync(svgCommits, generateBarChartSVG('Top contributors by commits', names, commitsVals, { limit: 25 }), 'utf8');
+          fs.writeFileSync(
+            svgCommits,
+            generateBarChartSVG('Top contributors by commits', names, commitsVals, { limit: 25 }),
+            'utf8'
+          );
           debugLog('Fallback: wrote', svgCommits);
         }
-      } catch (e) { console.error(`[error] Fallback write failed for ${svgCommits}: ${e.message}`); }
+      } catch (e) {
+        console.error(`[error] Fallback write failed for ${svgCommits}: ${e.message}`);
+      }
       try {
         if (!fs.existsSync(svgNet)) {
           debugLog('Fallback: writing', svgNet);
-          fs.writeFileSync(svgNet, generateBarChartSVG('Top contributors by net lines', names, netVals, { limit: 25 }), 'utf8');
+          fs.writeFileSync(
+            svgNet,
+            generateBarChartSVG('Top contributors by net lines', names, netVals, { limit: 25 }),
+            'utf8'
+          );
           debugLog('Fallback: wrote', svgNet);
         }
-      } catch (e) { console.error(`[error] Fallback write failed for ${svgNet}: ${e.message}`); }
+      } catch (e) {
+        console.error(`[error] Fallback write failed for ${svgNet}: ${e.message}`);
+      }
       try {
         if (!fs.existsSync(svgHeat)) {
           debugLog('Fallback: writing', svgHeat);
           fs.writeFileSync(svgHeat, generateHeatmapSVG(analysis.heatmap), 'utf8');
           debugLog('Fallback: wrote', svgHeat);
         }
-      } catch (e) { console.error(`[error] Fallback write failed for ${svgHeat}: ${e.message}`); }
+      } catch (e) {
+        console.error(`[error] Fallback write failed for ${svgHeat}: ${e.message}`);
+      }
     }
     console.error(`Wrote ${formats.join('+').toUpperCase()} charts to ${chartsDir}`);
   } else {
@@ -1277,7 +1642,8 @@ jobs:
   // default: table
   if (opts.topStats !== false) {
     console.log('Top stats:');
-    for (const l of formatTopStatsLines(final.topStats || {}, topStatsMetrics)) console.log(`- ${l}`);
+    for (const l of formatTopStatsLines(final.topStats || {}, topStatsMetrics))
+      console.log(`- ${l}`);
     console.log('');
   }
   printTable(contributors, meta, groupBy);
@@ -1297,8 +1663,8 @@ const isMain = (() => {
 })();
 
 if (isMain) {
-  main(process.argv).catch(err => {
-    console.error(err && err.stack || String(err));
+  main(process.argv).catch((err) => {
+    console.error((err && err.stack) || String(err));
     process.exit(2);
   });
 }

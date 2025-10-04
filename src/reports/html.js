@@ -40,7 +40,7 @@ export function generateHTMLReport(data, repoRoot, opts = {}) {
     ${generateContributorsHTML(data)}
     ${generateChartsHTML()}
     ${generateBusFactorHTML(data)}
-    ${generateActivityHTML(data)}
+    ${generateActivityHTML()}
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -128,16 +128,24 @@ function generateTopStatsHTML(topStats, metrics) {
   const items = [];
 
   if (want.has('commits') && topStats.byCommits) {
-    items.push(`<div class="top-stat-item">🏆 <strong>Most Commits:</strong> ${topStats.byCommits.name} (${topStats.byCommits.commits})</div>`);
+    items.push(
+      `<div class="top-stat-item">🏆 <strong>Most Commits:</strong> ${topStats.byCommits.name} (${topStats.byCommits.commits})</div>`
+    );
   }
   if (want.has('additions') && topStats.byAdditions) {
-    items.push(`<div class="top-stat-item">➕ <strong>Most Additions:</strong> ${topStats.byAdditions.name} (${topStats.byAdditions.added?.toLocaleString()})</div>`);
+    items.push(
+      `<div class="top-stat-item">➕ <strong>Most Additions:</strong> ${topStats.byAdditions.name} (${topStats.byAdditions.added?.toLocaleString()})</div>`
+    );
   }
   if (want.has('deletions') && topStats.byDeletions) {
-    items.push(`<div class="top-stat-item">➖ <strong>Most Deletions:</strong> ${topStats.byDeletions.name} (${topStats.byDeletions.deleted?.toLocaleString()})</div>`);
+    items.push(
+      `<div class="top-stat-item">➖ <strong>Most Deletions:</strong> ${topStats.byDeletions.name} (${topStats.byDeletions.deleted?.toLocaleString()})</div>`
+    );
   }
   if (want.has('net') && topStats.byNet) {
-    items.push(`<div class="top-stat-item">📊 <strong>Best Net Contribution:</strong> ${topStats.byNet.name} (${topStats.byNet.net?.toLocaleString()})</div>`);
+    items.push(
+      `<div class="top-stat-item">📊 <strong>Best Net Contribution:</strong> ${topStats.byNet.name} (${topStats.byNet.net?.toLocaleString()})</div>`
+    );
   }
 
   return `
@@ -149,9 +157,11 @@ function generateTopStatsHTML(topStats, metrics) {
 }
 
 function generateContributorsHTML(data) {
-  const rows = data.topContributors.slice(0, 25).map((c, idx) => {
-    const net = (c.added || 0) - (c.deleted || 0);
-    return `
+  const rows = data.topContributors
+    .slice(0, 25)
+    .map((c, idx) => {
+      const net = (c.added || 0) - (c.deleted || 0);
+      return `
       <tr>
         <td>${idx + 1}</td>
         <td><strong>${c.name}</strong><br><code>${c.email}</code></td>
@@ -161,7 +171,8 @@ function generateContributorsHTML(data) {
         <td style="color: ${net >= 0 ? '#38a169' : '#e53e3e'}">${net.toLocaleString()}</td>
       </tr>
     `;
-  }).join('');
+    })
+    .join('');
 
   return `
     <section class="section">
@@ -200,9 +211,13 @@ function generateChartsHTML() {
 }
 
 function generateBusFactorHTML(data) {
-  const files = data.busFactor.filesSingleOwner.slice(0, 10).map(f =>
-    `<tr><td><code>${f.file}</code></td><td>${f.owner}</td><td>${f.changes.toLocaleString()}</td></tr>`
-  ).join('');
+  const files = data.busFactor.filesSingleOwner
+    .slice(0, 10)
+    .map(
+      (f) =>
+        `<tr><td><code>${f.file}</code></td><td>${f.owner}</td><td>${f.changes.toLocaleString()}</td></tr>`
+    )
+    .join('');
 
   return `
     <section class="section">
@@ -216,7 +231,7 @@ function generateBusFactorHTML(data) {
   `;
 }
 
-function generateActivityHTML(data) {
+function generateActivityHTML() {
   return `
     <section class="section">
       <h2>🕒 Activity Heatmap</h2>

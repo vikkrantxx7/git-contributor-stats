@@ -30,7 +30,10 @@ export function parseTopStatsMetrics(input) {
   if (!input) return all;
 
   const set = new Set();
-  for (const part of String(input).split(',').map(s => s.trim().toLowerCase()).filter(Boolean)) {
+  for (const part of String(input)
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean)) {
     if (all.includes(part)) set.add(part);
   }
   return set.size ? Array.from(set) : all;
@@ -44,14 +47,19 @@ export function parseTopStatsMetrics(input) {
  */
 export function formatTopStatsLines(ts, metrics) {
   const lines = [];
-  const want = new Set(metrics && metrics.length ? metrics : ['commits', 'additions', 'deletions', 'net', 'changes']);
+  const want = new Set(
+    metrics?.length ? metrics : ['commits', 'additions', 'deletions', 'net', 'changes']
+  );
 
   function line(label, entry, metricKey) {
     if (!entry) return `${label}: —`;
-    const metricVal = (entry && typeof entry[metricKey] === 'number')
-      ? entry[metricKey]
-      : (metricKey === 'net' ? ((entry.added || 0) - (entry.deleted || 0)) : undefined);
-    const suffix = (typeof metricVal === 'number') ? ` (${metricVal})` : '';
+    const metricVal =
+      entry && typeof entry[metricKey] === 'number'
+        ? entry[metricKey]
+        : metricKey === 'net'
+          ? (entry.added || 0) - (entry.deleted || 0)
+          : undefined;
+    const suffix = typeof metricVal === 'number' ? ` (${metricVal})` : '';
     const who = `${entry.name || '—'}${entry.email ? ` <${entry.email}>` : ''}`;
     return `${label}: ${who}${suffix}`;
   }

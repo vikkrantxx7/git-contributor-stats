@@ -13,9 +13,10 @@ export function aggregateBasic(commits, groupBy) {
   const map = new Map();
 
   for (const c of commits) {
-    const key = groupBy === 'name'
-      ? (c.authorName || '').trim() || '(unknown)'
-      : (c.authorEmail || '').trim().toLowerCase() || '(unknown)';
+    const key =
+      groupBy === 'name'
+        ? (c.authorName || '').trim() || '(unknown)'
+        : (c.authorEmail || '').trim().toLowerCase() || '(unknown)';
 
     if (!map.has(key)) {
       map.set(key, {
@@ -43,7 +44,7 @@ export function aggregateBasic(commits, groupBy) {
     }
   }
 
-  return Array.from(map.values()).map(v => ({
+  return Array.from(map.values()).map((v) => ({
     key: v.key,
     name: v.name || (groupBy === 'name' ? v.key : ''),
     emails: Array.from(v.emails),
@@ -73,8 +74,6 @@ export function pickSortMetric(by) {
     case 'dels':
     case 'lines-deleted':
       return (a, b) => b.deletions - a.deletions || b.commits - a.commits;
-    case 'changes':
-    case 'delta':
     default:
       return (a, b) => b.changes - a.changes || b.commits - a.commits;
   }
@@ -86,8 +85,10 @@ export function pickSortMetric(by) {
  * @returns {object} Metadata object
  */
 export function computeMeta(contributors) {
-  let commits = 0, additions = 0, deletions = 0;
-  let first = undefined, last = undefined;
+  let commits = 0,
+    additions = 0,
+    deletions = 0;
+  let first, last;
 
   for (const c of contributors) {
     commits += c.commits || 0;
@@ -120,11 +121,18 @@ export function computeMeta(contributors) {
  * @param {string} groupBy
  */
 export function printTable(contributors, meta, groupBy) {
-  const headers = ['#', groupBy === 'name' ? 'Author' : 'Email', 'Commits', '+Additions', '-Deletions', '±Changes'];
+  const headers = [
+    '#',
+    groupBy === 'name' ? 'Author' : 'Email',
+    'Commits',
+    '+Additions',
+    '-Deletions',
+    '±Changes'
+  ];
   const rows = [];
 
   contributors.forEach((c, idx) => {
-    const label = groupBy === 'name' ? (c.name || '(unknown)') : (c.key || '(unknown)');
+    const label = groupBy === 'name' ? c.name || '(unknown)' : c.key || '(unknown)';
     rows.push([
       String(idx + 1),
       label,
@@ -136,30 +144,36 @@ export function printTable(contributors, meta, groupBy) {
   });
 
   const colWidths = headers.map((h, i) =>
-    Math.max(h.length, ...rows.map(r => (r[i] ? String(r[i]).length : 0)))
+    Math.max(h.length, ...rows.map((r) => (r[i] ? String(r[i]).length : 0)))
   );
 
-  const headerLine = headers.map((h, i) =>
-    (i === 1 ? String(h).padEnd(colWidths[i]) : String(h).padStart(colWidths[i]))
-  ).join('  ');
+  const headerLine = headers
+    .map((h, i) => (i === 1 ? String(h).padEnd(colWidths[i]) : String(h).padStart(colWidths[i])))
+    .join('  ');
 
-  const sepLine = colWidths.map(w => '-'.repeat(w)).join('  ');
+  const sepLine = colWidths.map((w) => '-'.repeat(w)).join('  ');
 
   console.log(headerLine);
   console.log(sepLine);
 
-  rows.forEach(r => {
-    const line = r.map((cell, i) =>
-      (i === 1 ? String(cell).padEnd(colWidths[i]) : String(cell).padStart(colWidths[i]))
-    ).join('  ');
+  rows.forEach((r) => {
+    const line = r
+      .map((cell, i) =>
+        i === 1 ? String(cell).padEnd(colWidths[i]) : String(cell).padStart(colWidths[i])
+      )
+      .join('  ');
     console.log(line);
   });
 
   console.log();
-  console.log(`Contributors: ${formatNumber(meta.contributors)} | Commits: ${formatNumber(meta.commits)} | Changes: ${formatNumber(meta.additions + meta.deletions)} (+${formatNumber(meta.additions)} / -${formatNumber(meta.deletions)})`);
+  console.log(
+    `Contributors: ${formatNumber(meta.contributors)} | Commits: ${formatNumber(meta.commits)} | Changes: ${formatNumber(meta.additions + meta.deletions)} (+${formatNumber(meta.additions)} / -${formatNumber(meta.deletions)})`
+  );
 
   if (meta.firstCommitDate || meta.lastCommitDate) {
-    console.log(`Range: ${meta.firstCommitDate ? new Date(meta.firstCommitDate).toISOString().slice(0,10) : '—'} → ${meta.lastCommitDate ? new Date(meta.lastCommitDate).toISOString().slice(0,10) : '—'}`);
+    console.log(
+      `Range: ${meta.firstCommitDate ? new Date(meta.firstCommitDate).toISOString().slice(0, 10) : '—'} → ${meta.lastCommitDate ? new Date(meta.lastCommitDate).toISOString().slice(0, 10) : '—'}`
+    );
   }
 }
 
@@ -169,11 +183,18 @@ export function printTable(contributors, meta, groupBy) {
  * @param {string} groupBy
  */
 export function printCSV(contributors, groupBy) {
-  const header = ['rank', groupBy === 'name' ? 'author' : 'email', 'commits', 'additions', 'deletions', 'changes'];
+  const header = [
+    'rank',
+    groupBy === 'name' ? 'author' : 'email',
+    'commits',
+    'additions',
+    'deletions',
+    'changes'
+  ];
   console.log(header.join(','));
 
   contributors.forEach((c, i) => {
-    const label = groupBy === 'name' ? (c.name || '') : (c.key || '');
+    const label = groupBy === 'name' ? c.name || '' : c.key || '';
     console.log([i + 1, label, c.commits, c.additions, c.deletions, c.changes].join(','));
   });
 }

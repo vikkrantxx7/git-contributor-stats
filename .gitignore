@@ -10,61 +10,26 @@ test-charts/
 # Build artifacts
 dist/
 
-# Temporary files and directories
-tmp*/
-*.tmp
-
 # Debug and log files
 *.log
 debug.txt
 smoke-debug.log
 
-# Test files
-help_test.txt
-test-output.csv
-
 # IDE files
 .idea/
 .vscode/
-*.swp
-*.swo
-*~
 
 # OS files
 .DS_Store
 .DS_Store?
-._*
-.Spotlight-V100
-.Trashes
 ehthumbs.db
 Thumbs.db
 
-# Runtime files
-*.pid
-*.seed
-*.pid.lock
-
 # Coverage directory used by tools like istanbul
 coverage/
-*.lcov
-
-# nyc test coverage
-.nyc_output
-
-# Dependency directories
-jspm_packages/
 
 # Optional npm cache directory
 .npm
-
-# Optional eslint cache
-.eslintcache
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
 
 # dotenv environment variables file
 .env
@@ -73,27 +38,3 @@ jspm_packages/
 .env.test.local
 .env.production.local
 
-# Parcel-bundler cache (https://parceljs.org/)
-.cache
-.parcel-cache
-
-# next.js build output
-.next
-
-# nuxt.js build output
-.nuxt
-
-# vuepress build output
-.vuepress/dist
-
-# Serverless directories
-.serverless
-
-# FuseBox cache
-.fusebox/
-
-# DynamoDB Local files
-.dynamodb/
-
-# TernJS port file
-.tern-port
