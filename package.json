@@ -30,6 +30,7 @@
   "module": "dist/index.mjs",
   "exports": {
     ".": "./dist/index.mjs",
+    "./cli": "./dist/cli.mjs",
     "./package.json": "./package.json"
   },
   "types": "dist/api.d.ts",
@@ -45,7 +46,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "bin": {
-    "git-contributor-stats": "cli.js"
+    "git-contributor-stats": "./dist/cli.mjs"
   },
   "scripts": {
     "start": "node cli.js",

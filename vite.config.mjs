@@ -1,5 +1,5 @@
 import { defineConfig } from 'vite';
-import { builtinModules } from 'module';
+import { builtinModules } from 'node:module';
 
 // Externalize Node builtins and runtime deps to avoid bundling them
 const externals = [
@@ -13,17 +13,20 @@ const externals = [
 
 export default defineConfig({
   build: {
-    lib: {
-      // Programmatic API entry (exports getContributorStats and helpers)
-      entry: 'src/index.js',
-      formats: ['es'],
-      fileName: () => 'index.mjs'
+    // Multi-entry build: programmatic API (index) + CLI entry (cli)
+    rollupOptions: {
+      input: {
+        index: 'src/index.js',
+        cli: 'src/cli/entry.js'
+      },
+      external: externals,
+      output: {
+        entryFileNames: '[name].mjs',
+        chunkFileNames: 'chunks/[name]-[hash].mjs'
+      }
     },
     target: 'node18',
     sourcemap: true,
-    rollupOptions: {
-      external: externals
-    },
     // Keep module structure minimal for Node usage
     minify: false,
     outDir: 'dist',

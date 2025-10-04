@@ -1,12 +1,12 @@
 // filepath: tests/e2e/filters.test.js
-import { join } from 'path';
+import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { execa } from 'execa';
 import { createTempRepo, initRepo, seedBasicHistory, cleanupRepo } from '../utils/repo.js';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = __filename.substring(0, __filename.lastIndexOf('/'));
-const repoRoot = join(__dirname, '..', '..');
+const __dirname = dirname(__filename);
+const repoRoot = dirname(dirname(__dirname));
 
 describe('Filtering options', () => {
   let tmpRepo;

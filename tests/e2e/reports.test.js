@@ -1,12 +1,12 @@
-import { join } from 'path';
-import { fileURLToPath } from 'url';
-import { existsSync, readFileSync } from 'fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { execa } from 'execa';
+import { existsSync, readFileSync } from 'node:fs';
 import { createTempRepo, initRepo, seedBasicHistory, cleanupRepo } from '../utils/repo.js';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = __filename.substring(0, __filename.lastIndexOf('/'));
-const repoRoot = join(__dirname, '..', '..');
+const __dirname = dirname(__filename);
+const repoRoot = dirname(dirname(__dirname));
 
 describe('Reports (MD/HTML) and charts (SVG)', () => {
   let tmpRepo;

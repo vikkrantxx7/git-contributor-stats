@@ -1,13 +1,13 @@
 // filepath: tests/e2e/output-formats.test.js
-import { join } from 'path';
-import { fileURLToPath } from 'url';
-import { existsSync, readFileSync, rmSync } from 'fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { existsSync, readFileSync, rmSync } from 'node:fs';
 import { execa } from 'execa';
 import { createTempRepo, initRepo, seedBasicHistory, cleanupRepo } from '../utils/repo.js';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = __filename.substring(0, __filename.lastIndexOf('/'));
-const repoRoot = join(__dirname, '..', '..');
+const __dirname = dirname(__filename);
+const repoRoot = dirname(dirname(__dirname));
 
 async function getCommitCount(repoDir) {
   const { stdout } = await execa('git', ['log', '--oneline'], { cwd: repoDir });

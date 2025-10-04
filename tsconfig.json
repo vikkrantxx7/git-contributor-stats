@@ -18,5 +18,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*.js", "src/**/*.ts"],
-  "exclude": ["dist", "node_modules", "reports-*", "reports", "index.js", "src/index.js", "src/index.ts"]
+  "exclude": ["dist", "node_modules", "reports-*", "reports", "index.js", "src/index.js",
+    "src/index.js"
+  ]
 }
