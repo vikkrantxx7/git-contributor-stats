@@ -1,14 +1,13 @@
 # Dependencies
-node_modules/
+/node_modules/
 
 # Generated reports and charts
-reports*/
-charts/
-debug-charts/
-test-charts/
+/charts/
+/debug-charts/
+/test-charts/
 
 # Build artifacts
-dist/
+/dist/
 
 # Debug and log files
 *.log
@@ -26,7 +25,7 @@ ehthumbs.db
 Thumbs.db
 
 # Coverage directory used by tools like istanbul
-coverage/
+/coverage/
 
 # Optional npm cache directory
 .npm
