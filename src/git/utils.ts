@@ -44,3 +44,36 @@ export function runGit(repoPath: string, args: string[]): GitResult {
   return { ok: true, stdout: res.stdout };
 }
 
+export function isGitRepo(repoPath: string): boolean {
+  try {
+    const gitFolder = path.join(repoPath, '.git');
+    return fs.existsSync(gitFolder);
+  } catch {
+    return false;
+  }
+}
+
+export interface GitLogArgsOptions {
+  branch?: string;
+  since?: string;
+  until?: string;
+  author?: string;
+  includeMerges?: boolean;
+  paths?: string[];
+}
+
+export function buildGitLogArgs(opts: GitLogArgsOptions): string[] {
+  const { branch, since, until, author, includeMerges, paths } = opts;
+  const args = ['log', '--numstat', '--date=iso-strict', '--no-color'];
+  args.push('--pretty=format:---%n%H%x00%an%x00%ae%x00%ad');
+
+  if (!includeMerges) args.push('--no-merges');
+  if (since) args.push(`--since=${since}`);
+  if (until) args.push(`--until=${until}`);
+  if (author) args.push(`--author=${author}`);
+  if (branch) args.push(branch);
+  args.push('--');
+  if (paths?.length) for (const p of paths) args.push(p);
+
+  return args;
+}

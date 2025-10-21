@@ -39,7 +39,7 @@ export function similarityScore(a: string, b: string) {
   }
 }
 
-type AliasConfig = Record<string, unknown> | Array<unknown> | undefined;
+export type AliasConfig = Record<string, unknown> | Array<unknown> | undefined;
 
 export function buildAliasResolver(config?: AliasConfig) {
   if (!config)
