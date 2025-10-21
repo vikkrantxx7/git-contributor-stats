@@ -1,6 +1,3 @@
-/**
- * Pure SVG chart generation utilities (fallback when ChartJS unavailable)
- */
 import { svgEscape } from '../utils/formatting.js';
 
 interface BarChartOptions {
@@ -9,14 +6,6 @@ interface BarChartOptions {
   height?: number;
 }
 
-/**
- * Generate SVG bar chart
- * @param title - Chart title
- * @param labels - Bar labels
- * @param values - Bar values
- * @param options - Chart options
- * @returns SVG content
- */
 export function generateBarChartSVG(
   title: string,
   labels: string[],
@@ -89,11 +78,6 @@ export function generateBarChartSVG(
   return svg.join('');
 }
 
-/**
- * Generate SVG heatmap
- * @param heatmap - 2D array of heatmap values
- * @returns SVG content
- */
 export function generateHeatmapSVG(heatmap: number[][]): string {
   const cellW = 26,
     cellH = 20;

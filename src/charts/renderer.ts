@@ -1,6 +1,3 @@
-/**
- * Chart rendering with ChartJS and fallback support
- */
 import fs from 'node:fs';
 import path from 'node:path';
 import { ensureDir } from '../utils/files.js';
@@ -28,9 +25,6 @@ async function ensureChartLib(): Promise<void> {
   }
 }
 
-/**
- * Create ChartJS canvas instance
- */
 function createCanvas(format: string, width: number, height: number): any {
   const type = format === 'svg' ? 'svg' : 'png';
   return new ChartJSNodeCanvas({
