@@ -7,15 +7,15 @@
     "emitDeclarationOnly": true,
     "declarationMap": true,
     "outDir": "dist",
-    "rootDir": "src",
     "strict": false,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "types": ["node", "vitest/globals"],
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts"],
+  "include": ["src/**/*.ts", "tests/**/*.ts", "*.ts"],
   "exclude": [
     "dist",
     "node_modules",

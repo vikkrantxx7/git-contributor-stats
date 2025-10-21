@@ -4,7 +4,7 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true, // make Vitest API (describe/it/expect etc.) globally available
-    include: ['tests/**/*.test.js'],
+    include: ['tests/**/*.test.ts'],
     exclude: ['node_modules', 'dist'],
     reporters: ['default'],
     timeout: 30000,
