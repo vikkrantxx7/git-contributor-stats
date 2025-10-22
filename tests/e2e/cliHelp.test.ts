@@ -8,7 +8,7 @@ const repoRoot = dirname(dirname(__dirname));
 
 describe('CLI basics', () => {
   it('shows help with examples', async () => {
-    const { stdout, stderr, exitCode } = await execa('node', ['cli.js', '--help'], {
+    const { stdout, stderr, exitCode } = await execa('node', ['dist/cli.mjs', '--help'], {
       cwd: repoRoot
     });
     expect(exitCode).toBe(0);
@@ -18,7 +18,9 @@ describe('CLI basics', () => {
   });
 
   it('prints semver on --version', async () => {
-    const { stdout, exitCode } = await execa('node', ['cli.js', '--version'], { cwd: repoRoot });
+    const { stdout, exitCode } = await execa('node', ['dist/cli.mjs', '--version'], {
+      cwd: repoRoot
+    });
     expect(exitCode).toBe(0);
     expect(stdout.trim()).toMatch(/^[0-9]+\.[0-9]+\.[0-9]+(?:[-+].*)?$/);
   });

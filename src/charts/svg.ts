@@ -122,4 +122,3 @@ export function generateHeatmapSVG(heatmap: number[][]): string {
   svg.push(`</svg>`);
   return svg.join('');
 }
-

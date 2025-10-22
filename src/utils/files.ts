@@ -59,4 +59,3 @@ export async function countTotalLines(repoPath: string, runGit: RunGitFunction):
     return 0;
   }
 }
-

@@ -26,7 +26,7 @@ describe('Output formats (table/csv)', () => {
   it('prints a reasonable table to stdout', async () => {
     const { stdout, stderr, exitCode } = await execa(
       'node',
-      ['cli.js', '--repo', tmpRepo, '--format', 'table', '--top', '5', '--no-count-lines'],
+      ['dist/cli.mjs', '--repo', tmpRepo, '--format', 'table', '--top', '5', '--no-count-lines'],
       { cwd: repoRoot }
     );
     expect(exitCode).toBe(0);
@@ -38,7 +38,7 @@ describe('Output formats (table/csv)', () => {
   it('prints CSV to stdout', async () => {
     const { stdout, stderr, exitCode } = await execa(
       'node',
-      ['cli.js', '--repo', tmpRepo, '--format', 'csv', '--top', '5', '--no-count-lines'],
+      ['dist/cli.mjs', '--repo', tmpRepo, '--format', 'csv', '--top', '5', '--no-count-lines'],
       { cwd: repoRoot }
     );
     expect(exitCode).toBe(0);
@@ -57,7 +57,7 @@ describe('Output formats (table/csv)', () => {
 
     const { stderr, exitCode } = await execa(
       'node',
-      ['cli.js', '--repo', tmpRepo, '--csv', csvPath, '--no-count-lines'],
+      ['dist/cli.mjs', '--repo', tmpRepo, '--csv', csvPath, '--no-count-lines'],
       { cwd: repoRoot }
     );
     expect(exitCode).toBe(0);

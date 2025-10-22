@@ -36,7 +36,7 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
     const { exitCode } = await execa(
       'node',
       [
-        'cli.js',
+        'dist/cli.mjs',
         '--repo',
         tmpRepo,
         '--charts',
@@ -63,7 +63,7 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
   it('handles similarity threshold without changing totalCommits', async () => {
     const { stdout, exitCode } = await execa(
       'node',
-      ['cli.js', '--repo', tmpRepo, '--similarity', '0.5', '--json', '--no-count-lines'],
+      ['dist/cli.mjs', '--repo', tmpRepo, '--similarity', '0.5', '--json', '--no-count-lines'],
       { cwd: repoRoot }
     );
     expect(exitCode).toBe(0);
@@ -75,7 +75,7 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
   it('returns a friendly error on invalid repository', async () => {
     let error: any = null;
     try {
-      await execa('node', ['cli.js', '--repo', '/definitely/not/a/repo', '--json'], {
+      await execa('node', ['dist/cli.mjs', '--repo', '/definitely/not/a/repo', '--json'], {
         cwd: repoRoot
       });
     } catch (e) {
@@ -88,7 +88,7 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
   it('emits debug logs to stderr when verbose is enabled', async () => {
     const { stdout, stderr, exitCode } = await execa(
       'node',
-      ['cli.js', '--repo', tmpRepo, '--json', '--verbose', '--no-count-lines'],
+      ['dist/cli.mjs', '--repo', tmpRepo, '--json', '--verbose', '--no-count-lines'],
       { cwd: repoRoot }
     );
     expect(exitCode).toBe(0);

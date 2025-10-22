@@ -3,9 +3,9 @@
 export function parseDateInput(input: string): string | undefined {
   if (!input) return undefined;
 
-  const rel = /^([0-9]+)\.(day|days|week|weeks|month|months|year|years)$/i.exec(input.trim());
+  const rel = /^(\d+)\.(day|days|week|weeks|month|months|year|years)$/i.exec(input.trim());
   if (rel) {
-    const qty = parseInt(rel[1], 10);
+    const qty = Number.parseInt(rel[1], 10);
     const unit = rel[2].toLowerCase();
     const now = new Date();
     const d = new Date(now);
@@ -35,4 +35,3 @@ export function isoWeekKey(date: Date): string {
   const week = 1 + Math.round(diff / 7);
   return `${target.getFullYear()}-W${String(week).padStart(2, '0')}`;
 }
-

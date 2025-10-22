@@ -70,24 +70,29 @@ export function generateMarkdownReport(
     : ['commits', 'additions', 'deletions', 'net', 'changes'];
   const lines: string[] = [];
 
-  lines.push('# Git Contributor Stats');
-  lines.push('');
-  lines.push(`**Repository:** ${repoRoot}`);
-  lines.push(`**Generated:** ${new Date().toISOString()}`);
-  lines.push('');
-
-  lines.push('## Summary');
-  lines.push('');
-  lines.push(`- **Total contributors:** ${Object.keys(data.contributors).length}`);
-  lines.push(`- **Total commits:** ${data.totalCommits.toLocaleString()}`);
-  lines.push(`- **Total lines:** ${data.totalLines.toLocaleString()}`);
-  lines.push('');
+  lines.push(
+    '# Git Contributor Stats',
+    '',
+    `**Repository:** ${repoRoot}`,
+    `**Generated:** ${new Date().toISOString()}`,
+    '',
+    '## Summary',
+    '',
+    `- **Total contributors:** ${Object.keys(data.contributors).length}`,
+    `- **Total commits:** ${data.totalCommits.toLocaleString()}`,
+    `- **Total lines:** ${data.totalLines.toLocaleString()}`,
+    ''
+  );
 
   if (includeTopStats && data.topStats) {
     const ts = data.topStats;
     const want = new Set(topMetrics);
 
-    function formatStatLine(label: string, entry: TopStatsEntry | undefined, metricKey: string): string {
+    function formatStatLine(
+      label: string,
+      entry: TopStatsEntry | undefined,
+      metricKey: string
+    ): string {
       if (!entry) return `- **${label}:** —`;
       const metricVal =
         entry && typeof entry[metricKey as keyof TopStatsEntry] === 'number'
@@ -100,8 +105,8 @@ export function generateMarkdownReport(
       return `- **${label}:** ${who}${suffix}`;
     }
 
-    lines.push('## Top stats');
-    lines.push('');
+    lines.push('## Top stats', '');
+
     if (want.has('commits')) lines.push(formatStatLine('Most commits', ts.byCommits, 'commits'));
     if (want.has('additions'))
       lines.push(formatStatLine('Most additions', ts.byAdditions, 'added'));
@@ -109,13 +114,16 @@ export function generateMarkdownReport(
       lines.push(formatStatLine('Most deletions', ts.byDeletions, 'deleted'));
     if (want.has('net')) lines.push(formatStatLine('Best net contribution', ts.byNet, 'net'));
     if (want.has('changes')) lines.push(formatStatLine('Most changes', ts.byChanges, 'changes'));
+
     lines.push('');
   }
 
-  lines.push('## Top contributors');
-  lines.push('');
-  lines.push('| Rank | Contributor | Commits | Added | Deleted | Net | Top Files |');
-  lines.push('|---:|---|---:|---:|---:|---:|---|');
+  lines.push(
+    '## Top contributors',
+    '',
+    '| Rank | Contributor | Commits | Added | Deleted | Net | Top Files |',
+    '|---:|---|---:|---:|---:|---:|---|'
+  );
 
   data.topContributors.slice(0, 50).forEach((c, idx) => {
     const net = (c.added || 0) - (c.deleted || 0);
@@ -128,18 +136,21 @@ export function generateMarkdownReport(
     );
   });
 
-  lines.push('');
-
-  lines.push('## Bus Factor Analysis');
-  lines.push('');
-  lines.push(`**Files with single contributor:** ${data.busFactor.filesSingleOwner.length}`);
-  lines.push('');
+  lines.push(
+    '',
+    '## Bus Factor Analysis',
+    '',
+    `**Files with single contributor:** ${data.busFactor.filesSingleOwner.length}`,
+    ''
+  );
 
   if (data.busFactor.filesSingleOwner.length > 0) {
-    lines.push('### High-Risk Files (Single Owner)');
-    lines.push('');
-    lines.push('| File | Owner | Changes |');
-    lines.push('|---|---|---:|');
+    lines.push(
+      '### High-Risk Files (Single Owner)',
+      '',
+      '| File | Owner | Changes |',
+      '|---|---|---:|'
+    );
 
     data.busFactor.filesSingleOwner.slice(0, 20).forEach((f) => {
       lines.push(`| \`${f.file}\` | ${f.owner} | ${f.changes.toLocaleString()} |`);
@@ -147,87 +158,30 @@ export function generateMarkdownReport(
     lines.push('');
   }
 
-  lines.push('## Activity Patterns');
-  lines.push('');
+  lines.push('## Activity Patterns', '');
 
   const monthlyEntries = Object.entries(data.commitFrequency.monthly)
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-12);
 
   if (monthlyEntries.length > 0) {
-    lines.push('### Recent Monthly Activity');
-    lines.push('');
-    lines.push('| Month | Commits |');
-    lines.push('|---|---:|');
+    lines.push('### Recent Monthly Activity', '', '| Month | Commits |', '|---|---:|');
+
     monthlyEntries.forEach(([month, commits]) => {
       lines.push(`| ${month} | ${commits.toLocaleString()} |`);
     });
     lines.push('');
   }
 
-  lines.push('### Commit Heatmap Data');
-  lines.push('');
-  lines.push('> Commit activity by day of week (0=Sunday) and hour (0-23)');
-  lines.push('');
-  lines.push('```json');
-  lines.push(JSON.stringify(data.heatmap, null, 2));
-  lines.push('```');
+  lines.push(
+    '### Commit Heatmap Data',
+    '',
+    '> Commit activity by day of week (0=Sunday) and hour (0-23)',
+    '',
+    '```json',
+    JSON.stringify(data.heatmap, null, 2),
+    '```'
+  );
 
   return lines.join('\n');
 }
-function escapeCSV(v: unknown): string {
-  if (v === null || v === undefined) return '';
-  const s = String(v);
-  if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-    return `"${s.replace(/"/g, '""')}"`;
-  }
-  return s;
-}
-
-export function toCSV(rows: Record<string, unknown>[], headers: string[]): string {
-  const lines: string[] = [];
-  if (headers)
-    lines.push(headers.map((header) => header.charAt(0).toUpperCase() + header.slice(1)).join(','));
-
-  for (const r of rows) {
-    lines.push(headers.map((h) => escapeCSV(r[h])).join(','));
-  }
-
-  return lines.join('\n');
-}
-
-interface TopFile {
-  filename: string;
-  changes: number;
-}
-
-interface Contributor {
-  name: string;
-  email: string;
-  commits: number;
-  added: number;
-  deleted: number;
-  topFiles: TopFile[];
-}
-
-interface AnalysisData {
-  topContributors: Contributor[];
-}
-
-export function generateCSVReport(analysis: AnalysisData): string {
-  const contribRows = analysis.topContributors.map((c) => ({
-    contributor: `${c.name} <${c.email}>`,
-    commits: c.commits,
-    added: c.added,
-    deleted: c.deleted,
-    net: c.added - c.deleted,
-    topFiles: c.topFiles
-      .slice(0, 5)
-      .map((file) => `${file.filename}(${file.changes})`)
-      .join('; ')
-  }));
-
-  const headers = ['contributor', 'commits', 'added', 'deleted', 'net', 'topFiles'];
-  return toCSV(contribRows, headers);
-}
-

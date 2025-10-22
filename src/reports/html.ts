@@ -341,4 +341,3 @@ function getJavaScript(data: AnalysisData): string {
     document.getElementById('heatmap').innerHTML = html;
   `;
 }
-

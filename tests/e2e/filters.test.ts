@@ -25,7 +25,7 @@ describe('Filtering options', () => {
   it('limits by branch/range (HEAD~1..HEAD)', async () => {
     const { stdout, exitCode } = await execa(
       'node',
-      ['cli.js', '--repo', tmpRepo, '--branch', 'HEAD~1..HEAD', '--json', '--no-count-lines'],
+      ['dist/cli.mjs', '--repo', tmpRepo, '--branch', 'HEAD~1..HEAD', '--json', '--no-count-lines'],
       { cwd: repoRoot }
     );
     expect(exitCode).toBe(0);
@@ -36,7 +36,15 @@ describe('Filtering options', () => {
   it('filters by author pattern', async () => {
     const { stdout, exitCode } = await execa(
       'node',
-      ['cli.js', '--repo', tmpRepo, '--author', 'alice@example.com', '--json', '--no-count-lines'],
+      [
+        'dist/cli.mjs',
+        '--repo',
+        tmpRepo,
+        '--author',
+        'alice@example.com',
+        '--json',
+        '--no-count-lines'
+      ],
       { cwd: repoRoot }
     );
     expect(exitCode).toBe(0);

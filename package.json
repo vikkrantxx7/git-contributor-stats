@@ -57,7 +57,6 @@
     "lint:fix": "node scripts/lintFix.js",
     "prepublishOnly": "npm run test && npm run build",
     "report": "node ./dist/cli.mjs --out-dir reports --md reports/report.md --html reports/report.html --no-count-lines --charts",
-    "smoke": "node scripts/smoke.js",
     "sort": "sort-package-json",
     "start": "node ./dist/cli.mjs",
     "test": "vitest run",

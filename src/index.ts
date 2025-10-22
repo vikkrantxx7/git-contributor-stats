@@ -4,7 +4,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import type { ContributorsMeta } from './analytics/aggregator.js';
+import type { ContributorsMeta } from './analytics/aggregator.ts';
 // Analytics
 import {
   aggregateBasic,
@@ -12,9 +12,9 @@ import {
   pickSortMetric,
   printCSV,
   printTable
-} from './analytics/aggregator.js';
-import { type AliasConfig, buildAliasResolver } from './analytics/aliases.js';
-import { analyze } from './analytics/analyzer.js';
+} from './analytics/aggregator.ts';
+import { type AliasConfig, buildAliasResolver } from './analytics/aliases.ts';
+import { analyze } from './analytics/analyzer.ts';
 import type {
   ContributorStatsOptions as ApiContributorStatsOptions,
   BusFactorInfo,
@@ -23,19 +23,23 @@ import type {
   TopContributor,
   TopFileEntry,
   TopStatsSummary
-} from './api.js';
-import { renderBarChartImage, renderHeatmapImage } from './charts/renderer.js';
-import { generateBarChartSVG, generateHeatmapSVG } from './charts/svg.js';
-import { parseGitLog } from './git/parser.js';
+} from './api.ts';
+import { renderBarChartImage, renderHeatmapImage } from './charts/renderer.ts';
+import { generateBarChartSVG, generateHeatmapSVG } from './charts/svg.ts';
+import { parseGitLog } from './git/parser.ts';
 // Git
-import { buildGitLogArgs, isGitRepo, runGit } from './git/utils.js';
-import { generateCSVReport } from './reports/csv.js';
-import { generateHTMLReport } from './reports/html.js';
-import { generateMarkdownReport } from './reports/markdown.js';
-import { parseDateInput } from './utils/dates.js';
+import { buildGitLogArgs, isGitRepo, runGit } from './git/utils.ts';
+import { generateCSVReport } from './reports/csv.ts';
+import { generateHTMLReport } from './reports/html.ts';
+import { generateMarkdownReport } from './reports/markdown.ts';
+import { parseDateInput } from './utils/dates.ts';
 // Utils
-import { countTotalLines, ensureDir, tryLoadJSON } from './utils/files.js';
-import { formatTopStatsLines, parseTopStatsMetrics } from './utils/formatting.js';
+import { countTotalLines, ensureDir, tryLoadJSON } from './utils/files.ts';
+import {
+  formatTopStatsLines,
+  parseTopStatsMetrics,
+  type TopStatsEntry
+} from './utils/formatting.ts';
 
 export interface ContributorStatsOptions extends ApiContributorStatsOptions {
   outDir?: string;
@@ -175,14 +179,10 @@ export async function generateOutputs(
   final: ContributorStatsResult,
   opts: ContributorStatsOptions = {}
 ): Promise<void> {
-  const outDir = opts.outDir as string | undefined;
-  const writeCSVPath =
-    (opts.csv as string | undefined) ||
-    (outDir ? path.join(outDir, 'contributors.csv') : undefined);
-  const writeMDPath =
-    (opts.md as string | undefined) || (outDir ? path.join(outDir, 'report.md') : undefined);
-  const writeHTMLPath =
-    (opts.html as string | undefined) || (outDir ? path.join(outDir, 'report.html') : undefined);
+  const outDir = opts.outDir;
+  const writeCSVPath = opts.csv || (outDir ? path.join(outDir, 'contributors.csv') : undefined);
+  const writeMDPath = opts.md || (outDir ? path.join(outDir, 'report.md') : undefined);
+  const writeHTMLPath = opts.html || (outDir ? path.join(outDir, 'report.html') : undefined);
 
   // Helper to map TopContributor to Contributor for reports
   function toReportContributor(tc: TopContributor): {
@@ -205,24 +205,12 @@ export async function generateOutputs(
 
   if (writeCSVPath) {
     ensureDir(path.dirname(writeCSVPath));
-    // Map TopContributor to ContributorBasic
-    const csvContributors = final.basic.contributors.map((tc) => ({
-      key: tc.email ?? tc.name ?? '',
-      name: tc.name ?? '',
-      emails: tc.email ? [tc.email] : [],
-      commits: tc.commits,
-      additions: tc.added,
-      deletions: tc.deleted,
-      changes: tc.changes,
-      firstCommitDate: undefined,
-      lastCommitDate: undefined
-    }));
-    const csv = generateCSVReport({ topContributors: csvContributors });
+    const csv = generateCSVReport({ topContributors: final.topContributors });
     fs.writeFileSync(writeCSVPath, csv, 'utf8');
     console.error(`Wrote CSV to ${writeCSVPath}`);
   }
 
-  const topStatsMetrics = parseTopStatsMetrics(opts.topStats as string);
+  const topStatsMetrics = parseTopStatsMetrics(opts.topStats);
 
   if (writeMDPath) {
     ensureDir(path.dirname(writeMDPath));
@@ -265,9 +253,7 @@ export async function generateCharts(
   const chartsRequested = opts.charts || opts.svg || opts.svgDir;
   if (!chartsRequested) return;
 
-  const chartsDir = outDir
-    ? outDir
-    : opts.chartsDir || opts.svgDir || path.join(process.cwd(), 'charts');
+  const chartsDir = outDir || opts.chartsDir || opts.svgDir || path.join(process.cwd(), 'charts');
   ensureDir(chartsDir);
 
   const formatOpt = String(opts.chartFormat || 'svg').toLowerCase();
@@ -294,9 +280,7 @@ export async function generateCharts(
         commitsVals,
         path.join(chartsDir, `top-commits${ext}`),
         { limit: 25, verbose: opts.verbose }
-      )
-    );
-    tasks.push(
+      ),
       renderBarChartImage(
         fmt,
         'Top contributors by net lines',
@@ -304,9 +288,7 @@ export async function generateCharts(
         netVals,
         path.join(chartsDir, `top-net${ext}`),
         { limit: 25, verbose: opts.verbose }
-      )
-    );
-    tasks.push(
+      ),
       renderHeatmapImage(fmt, final.heatmap, path.join(chartsDir, `heatmap${ext}`), {
         verbose: opts.verbose
       })
@@ -392,10 +374,10 @@ export function handleStdoutOutput(
     console.log('Top stats:');
     const topStatsMetrics = parseTopStatsMetrics(opts.topStats);
     // Convert TopStatsSummary to Record<string, TopStatsEntry>
-    const topStatsRecord: Record<string, any> = {};
+    const topStatsRecord: Record<string, TopStatsEntry> = {};
     if (final.topStats) {
       for (const key of Object.keys(final.topStats)) {
-        topStatsRecord[key] = (final.topStats as any)[key];
+        topStatsRecord[key] = final.topStats[key];
       }
     }
     for (const l of formatTopStatsLines(topStatsRecord, topStatsMetrics)) {

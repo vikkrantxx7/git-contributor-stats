@@ -29,7 +29,7 @@ describe('Reports (MD/HTML) and charts (SVG)', () => {
     const { exitCode } = await execa(
       'node',
       [
-        'cli.js',
+        'dist/cli.mjs',
         '--repo',
         tmpRepo,
         '--out-dir',
@@ -75,7 +75,7 @@ describe('Reports (MD/HTML) and charts (SVG)', () => {
     await execa(
       'node',
       [
-        'cli.js',
+        'dist/cli.mjs',
         '--repo',
         tmpRepo,
         '--out-dir',
