@@ -6,7 +6,7 @@ export function svgEscape(s: string): string {
   return String(s).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 }
 
-export function parseTopStatsMetrics(input: string): string[] {
+export function parseTopStatsMetrics(input?: string): string[] {
   const all = ['commits', 'additions', 'deletions', 'net', 'changes'];
   if (!input) return all;
 

@@ -7,7 +7,7 @@
     "emitDeclarationOnly": true,
     "declarationMap": true,
     "outDir": "dist",
-    "strict": false,
+    "strict": true,
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -15,14 +15,5 @@
     "types": ["node", "vitest/globals"],
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "*.ts"],
-  "exclude": [
-    "dist",
-    "node_modules",
-    "reports-*",
-    "reports",
-    "index.js",
-    "src/index.js",
-    "src/index.js"
-  ]
+  "include": ["src/**/*.ts"]
 }

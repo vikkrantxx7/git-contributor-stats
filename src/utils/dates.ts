@@ -1,6 +1,6 @@
 // Date parsing utilities for git-contributor-stats
 
-export function parseDateInput(input: string): string | undefined {
+export function parseDateInput(input?: string): string | undefined {
   if (!input) return undefined;
 
   const rel = /^(\d+)\.(day|days|week|weeks|month|months|year|years)$/i.exec(input.trim());

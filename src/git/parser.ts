@@ -15,7 +15,8 @@ export interface Commit {
   files: FileChange[];
 }
 
-export function parseGitLog(stdout: string): Commit[] {
+export function parseGitLog(stdout?: string): Commit[] {
+  if (!stdout) return [];
   const lines = stdout.split(/\r?\n/);
   const commits: Commit[] = [];
   let current: Commit | null = null;

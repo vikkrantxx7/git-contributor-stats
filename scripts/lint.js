@@ -7,11 +7,13 @@ const tasks = [
   { command: 'npm run typeCheck', name: 'typecheck', prefixColor: 'magenta' }
 ];
 
-concurrently(tasks, {
-  prefix: 'name',
-  killOthers: ['failure'], // 🚨 stop all if one fails
-  restartTries: 0
-}).result.then(
-  () => process.exit(0),
-  () => process.exit(1)
-);
+try {
+  await concurrently(tasks, {
+    prefix: 'name',
+    killOthers: ['failure'], // 🚨 stop all if one fails
+    restartTries: 0
+  }).result;
+  process.exit(0);
+} catch {
+  process.exit(1);
+}

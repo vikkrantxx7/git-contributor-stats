@@ -3,47 +3,93 @@ import path from 'node:path';
 import { ensureDir } from '../utils/files.js';
 import { generateBarChartSVG, generateHeatmapSVG } from './svg.js';
 
-// Lazy-load chart libs to avoid top-level await (CJS build compatibility)
-let ChartJSNodeCanvas: any;
-let registerables: any;
-let chartLibInitialized = false;
-
-async function ensureChartLib(): Promise<void> {
-  if (chartLibInitialized) return;
-  chartLibInitialized = true;
-  try {
-    const modCanvas = await import('chartjs-node-canvas');
-    ChartJSNodeCanvas = modCanvas.ChartJSNodeCanvas;
-    const modChart = await import('chart.js');
-    registerables = modChart.registerables;
-  } catch (_e) {
-    ChartJSNodeCanvas = null;
-    registerables = null;
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('[warn] chartjs-node-canvas not available, using fallback SVG generation.');
-    }
-  }
-}
-
-function createCanvas(format: string, width: number, height: number): any {
-  const type = format === 'svg' ? 'svg' : 'png';
-  return new ChartJSNodeCanvas({
-    width,
-    height,
-    type,
-    chartCallback: (ChartJS: any) => {
-      try {
-        if (ChartJS && registerables) ChartJS.register(...registerables);
-      } catch (_) {}
-    }
-  });
-}
-
 interface ChartOptions {
   width?: number;
   height?: number;
   verbose?: boolean;
   limit?: number;
+}
+
+// ESM-only: Use top-level await to load chart libraries
+let ChartJSNodeCanvas: unknown = null;
+let registerables: unknown = null;
+
+try {
+  const [modCanvas, modChart] = await Promise.all([
+    import('chartjs-node-canvas'),
+    import('chart.js')
+  ]);
+  ChartJSNodeCanvas = modCanvas.ChartJSNodeCanvas;
+  registerables = modChart.registerables;
+} catch (_error) {
+  // Chart library not available, will fall back to SVG
+  if (process.env.NODE_ENV !== 'production') {
+    console.warn('[warn] chartjs-node-canvas not available, using fallback SVG generation.');
+  }
+}
+
+function createCanvas(format: string, width: number, height: number): unknown {
+  if (!ChartJSNodeCanvas) return null;
+
+  const type = format === 'svg' ? 'svg' : 'png';
+  // biome-ignore lint/suspicious/noExplicitAny: ChartJS types are dynamic and not available at compile time
+  return new (ChartJSNodeCanvas as any)({
+    width,
+    height,
+    type,
+    chartCallback: (ChartJS: unknown) => {
+      try {
+        // biome-ignore lint/suspicious/noExplicitAny: ChartJS types are dynamic
+        if (ChartJS && registerables) (ChartJS as any).register(...(registerables as any));
+      } catch (_error) {
+        // Ignore registration errors
+      }
+    }
+  });
+}
+
+function validateAndPrepareDirectory(filePath: string): boolean {
+  try {
+    ensureDir(path.dirname(filePath));
+    return true;
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error(`[error] Failed to create directory: ${message}`);
+    return false;
+  }
+}
+
+function sanitizeChartData(
+  labels: string[],
+  values: number[],
+  title: string,
+  verbose?: boolean
+): { labels: string[]; values: number[] } {
+  if (!labels || !values || labels.length === 0) {
+    if (verbose) {
+      console.warn(`[warn] No data for bar chart: ${title}`);
+    }
+    return { labels: ['No data'], values: [0] };
+  }
+  return { labels, values };
+}
+
+function shouldUsePNG(format: string): boolean {
+  return format !== 'svg' && ChartJSNodeCanvas !== null;
+}
+
+async function renderSVGFallback(
+  filePath: string,
+  generator: () => string,
+  errorContext: string
+): Promise<void> {
+  try {
+    const svg = generator();
+    fs.writeFileSync(filePath, svg, 'utf8');
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error(`[error] ${errorContext}: ${message}`);
+  }
 }
 
 export async function renderBarChartImage(
@@ -54,44 +100,42 @@ export async function renderBarChartImage(
   filePath: string,
   options: ChartOptions = {}
 ): Promise<void> {
-  const width = options.width || 900;
-  const height = options.height || 400;
+  if (!validateAndPrepareDirectory(filePath)) return;
 
-  try {
-    ensureDir(path.dirname(filePath));
-  } catch (dirErr: any) {
-    console.error(`[error] Failed to create directory for chart: ${dirErr.message}`);
+  const { width = 900, height = 400, verbose = false, limit = 25 } = options;
+  const sanitized = sanitizeChartData(labels, values, title, verbose);
+
+  // Use SVG if format is svg or PNG library is unavailable
+  if (!shouldUsePNG(format)) {
+    await renderSVGFallback(
+      filePath,
+      () => generateBarChartSVG(title, sanitized.labels, sanitized.values, { limit }),
+      `Failed to generate SVG chart ${filePath}`
+    );
     return;
   }
 
+  // Render PNG using ChartJS
   try {
-    if (!labels || !values || labels.length === 0) {
-      if (options.verbose) console.error(`[warn] No data for bar chart: ${title}`);
-      labels = ['No data'];
-      values = [0];
-    }
-
-    // For PNG, ensure ChartJS is loaded
-    if (format !== 'svg') {
-      await ensureChartLib();
-    }
-
-    // Fallback to SVG when library unavailable or format is svg
-    if (!ChartJSNodeCanvas || format === 'svg') {
-      const svg = generateBarChartSVG(title, labels, values, { limit: options.limit || 25 });
-      fs.writeFileSync(filePath, svg, 'utf8');
+    const canvas = createCanvas(format, width, height);
+    if (!canvas) {
+      // Fallback to SVG if canvas creation failed
+      await renderSVGFallback(
+        filePath,
+        () => generateBarChartSVG(title, sanitized.labels, sanitized.values, { limit }),
+        `Canvas creation failed for ${filePath}`
+      );
       return;
     }
 
-    const canvas = createCanvas(format, width, height);
     const config = {
       type: 'bar',
       data: {
-        labels,
+        labels: sanitized.labels,
         datasets: [
           {
             label: title,
-            data: values,
+            data: sanitized.values,
             backgroundColor: '#4e79a7'
           }
         ]
@@ -108,21 +152,20 @@ export async function renderBarChartImage(
         }
       }
     };
-    const mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
 
-    const buffer = await canvas.renderToBuffer(config, mime);
+    const mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
+    // biome-ignore lint/suspicious/noExplicitAny: Canvas renderToBuffer requires dynamic typing
+    const buffer = await (canvas as any).renderToBuffer(config, mime);
     fs.writeFileSync(filePath, buffer);
-  } catch (err: any) {
-    if (format === 'svg') {
-      try {
-        const svg = generateBarChartSVG(title, labels, values, { limit: options.limit || 25 });
-        fs.writeFileSync(filePath, svg, 'utf8');
-      } catch (svgErr: any) {
-        console.error(`[error] Failed to generate chart ${filePath}: ${svgErr.message}`);
-      }
-    } else {
-      console.error(`[error] Failed to generate PNG chart ${filePath}: ${err.message}`);
-    }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error(`[error] Failed to generate PNG chart: ${message}`);
+    // Fallback to SVG on error
+    await renderSVGFallback(
+      filePath,
+      () => generateBarChartSVG(title, sanitized.labels, sanitized.values, { limit }),
+      `Fallback SVG generation failed for ${filePath}`
+    );
   }
 }
 
@@ -132,55 +175,64 @@ export async function renderHeatmapImage(
   filePath: string,
   options: ChartOptions = {}
 ): Promise<void> {
-  const width = options.width || 900;
-  const height = options.height || 220;
+  if (!validateAndPrepareDirectory(filePath)) return;
 
-  try {
-    ensureDir(path.dirname(filePath));
-  } catch (dirErr: any) {
-    console.error(`[error] Failed to create directory for heatmap: ${dirErr.message}`);
+  const { width = 900, height = 220, verbose = false } = options;
+
+  // Sanitize heatmap data
+  const sanitizedHeatmap =
+    !heatmap || !Array.isArray(heatmap) || heatmap.length === 0
+      ? (() => {
+          if (verbose) {
+            console.warn('[warn] Invalid heatmap data, creating empty heatmap');
+          }
+          return Array.from({ length: 7 }, () => new Array(24).fill(0));
+        })()
+      : heatmap;
+
+  // Use SVG if format is svg or PNG library is unavailable
+  if (!shouldUsePNG(format)) {
+    await renderSVGFallback(
+      filePath,
+      () => generateHeatmapSVG(sanitizedHeatmap),
+      `Failed to generate SVG heatmap ${filePath}`
+    );
     return;
   }
 
+  // Render PNG using ChartJS
   try {
-    if (!heatmap || !Array.isArray(heatmap) || heatmap.length === 0) {
-      if (options.verbose) console.error(`[warn] Invalid heatmap data, creating empty heatmap`);
-      heatmap = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
-    }
-
-    // For PNG, ensure ChartJS is loaded
-    if (format !== 'svg') {
-      await ensureChartLib();
-    }
-
-    // Fallback to SVG when library unavailable or format is svg
-    if (!ChartJSNodeCanvas || format === 'svg') {
-      const svg = generateHeatmapSVG(heatmap);
-      fs.writeFileSync(filePath, svg, 'utf8');
+    const canvas = createCanvas(format, width, height);
+    if (!canvas) {
+      // Fallback to SVG if canvas creation failed
+      await renderSVGFallback(
+        filePath,
+        () => generateHeatmapSVG(sanitizedHeatmap),
+        `Canvas creation failed for ${filePath}`
+      );
       return;
     }
 
-    const canvas = createCanvas(format, width, height);
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const hours = Array.from({ length: 24 }, (_, i) => i);
-    const datasetForDay = (row: number[], i: number) => ({
+
+    const datasets = sanitizedHeatmap.map((row, i) => ({
       label: days[i],
       data: row,
       backgroundColor: row.map((val) => {
-        const alpha =
-          val > 0 ? Math.min(1, 0.15 + 0.85 * (val / Math.max(1, Math.max(...row)))) : 0.05;
+        const maxVal = Math.max(1, Math.max(...row));
+        const alpha = val > 0 ? Math.min(1, 0.15 + 0.85 * (val / maxVal)) : 0.05;
         return `rgba(78,121,167,${alpha})`;
       }),
       borderWidth: 0,
       type: 'bar',
-      barPercentage: 1.0,
-      categoryPercentage: 1.0
-    });
+      barPercentage: 1,
+      categoryPercentage: 1
+    }));
 
-    const data = { labels: hours, datasets: heatmap.map(datasetForDay) };
     const config = {
       type: 'bar',
-      data,
+      data: { labels: hours, datasets },
       options: {
         indexAxis: 'y',
         plugins: {
@@ -194,20 +246,19 @@ export async function renderHeatmapImage(
         }
       }
     };
-    const mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
 
-    const buffer = await canvas.renderToBuffer(config, mime);
+    const mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
+    // biome-ignore lint/suspicious/noExplicitAny: Canvas renderToBuffer requires dynamic typing
+    const buffer = await (canvas as any).renderToBuffer(config, mime);
     fs.writeFileSync(filePath, buffer);
-  } catch (err: any) {
-    if (format === 'svg') {
-      try {
-        const svg = generateHeatmapSVG(heatmap);
-        fs.writeFileSync(filePath, svg, 'utf8');
-      } catch (svgErr: any) {
-        console.error(`[error] Failed to generate heatmap ${filePath}: ${svgErr.message}`);
-      }
-    } else {
-      console.error(`[error] Failed to generate PNG heatmap ${filePath}: ${err.message}`);
-    }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : JSON.stringify(error);
+    console.error(`[error] Failed to generate PNG heatmap: ${message}`);
+    // Fallback to SVG on error
+    await renderSVGFallback(
+      filePath,
+      () => generateHeatmapSVG(sanitizedHeatmap),
+      `Fallback SVG generation failed for ${filePath}`
+    );
   }
 }

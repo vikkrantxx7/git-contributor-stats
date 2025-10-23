@@ -134,12 +134,7 @@ export async function getContributorStats(
   }
   const meta: ContributorsMeta = computeMeta(contributorsBasic);
 
-  const analysis = analyze(
-    commits,
-    Number.isFinite(opts.similarity) ? opts.similarity : 0.85,
-    aliasResolveFn,
-    canonicalDetails
-  );
+  const analysis = analyze(commits, opts.similarity ?? 0.85, aliasResolveFn, canonicalDetails);
 
   let totalLines = 0;
   if (opts.countLines !== false) {
@@ -147,7 +142,7 @@ export async function getContributorStats(
   }
 
   const repoRootResult = runGit(repo, ['rev-parse', '--show-toplevel']);
-  const repoRoot = repoRootResult.ok ? repoRootResult.stdout.trim() : repo;
+  const repoRoot = repoRootResult.ok ? (repoRootResult.stdout?.trim() ?? repo) : repo;
   const branch =
     opts.branch ||
     (runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']).stdout || '').trim() ||
@@ -376,8 +371,11 @@ export function handleStdoutOutput(
     // Convert TopStatsSummary to Record<string, TopStatsEntry>
     const topStatsRecord: Record<string, TopStatsEntry> = {};
     if (final.topStats) {
-      for (const key of Object.keys(final.topStats)) {
-        topStatsRecord[key] = final.topStats[key];
+      for (const key of Object.keys(final.topStats) as Array<keyof typeof final.topStats>) {
+        const value = final.topStats[key];
+        if (value) {
+          topStatsRecord[key] = value;
+        }
       }
     }
     for (const l of formatTopStatsLines(topStatsRecord, topStatsMetrics)) {

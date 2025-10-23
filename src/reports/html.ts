@@ -32,11 +32,11 @@ interface TopStatsEntry {
 }
 
 interface TopStats {
-  byCommits?: TopStatsEntry;
-  byAdditions?: TopStatsEntry;
-  byDeletions?: TopStatsEntry;
-  byNet?: TopStatsEntry;
-  byChanges?: TopStatsEntry;
+  byCommits?: TopStatsEntry | null;
+  byAdditions?: TopStatsEntry | null;
+  byDeletions?: TopStatsEntry | null;
+  byNet?: TopStatsEntry | null;
+  byChanges?: TopStatsEntry | null;
 }
 
 interface AnalysisData {

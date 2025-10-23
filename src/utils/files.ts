@@ -40,7 +40,9 @@ export async function countTotalLines(repoPath: string, runGit: RunGitFunction):
     const res = runGit(repoPath, ['ls-files']);
     if (!res.ok) return 0;
 
-    const files = res.stdout!.split(/\r?\n/).filter(Boolean);
+    const files = res.stdout?.split(/\r?\n/).filter(Boolean);
+    if (!files) return 0;
+
     let total = 0;
 
     for (const rel of files) {
