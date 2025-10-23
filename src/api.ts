@@ -1,6 +1,8 @@
 // Public TypeScript declarations facade for git-contributor-stats
 // This file is only used to emit .d.ts (emitDeclarationOnly=true) – runtime logic stays in JS files.
 
+import type { AliasConfig } from './analytics/aliases.ts';
+
 export interface ContributorStatsOptions {
   repo?: string;
   branch?: string;
@@ -14,7 +16,7 @@ export interface ContributorStatsOptions {
   top?: number;
   similarity?: number;
   aliasFile?: string;
-  aliasConfig?: any;
+  aliasConfig?: AliasConfig;
   countLines?: boolean;
   includeTopStats?: boolean;
 }
@@ -80,43 +82,3 @@ export interface TopStatsSummary {
 export interface BusFactorInfo {
   filesSingleOwner: Array<{ file: string; owner: string; changes: number }>;
 }
-
-export interface GetContributorStatsResult {
-  meta: {
-    generatedAt: string;
-    repo: string;
-    branch: string | null;
-    since: string | null;
-    until: string | null;
-  };
-  totalCommits: number;
-  totalLines: number;
-  contributors: Record<string, ContributorsMapEntry>;
-  topContributors: TopContributor[];
-  topStats: TopStatsSummary;
-  commitFrequency: CommitFrequencyBreakdown;
-  heatmap: number[][]; // 7 x 24
-  busFactor: BusFactorInfo;
-  basic: {
-    contributors: ContributorBasic[];
-    meta: {
-      contributors: number;
-      commits: number;
-      additions: number;
-      deletions: number;
-      firstCommitDate?: string;
-      lastCommitDate?: string;
-    };
-  };
-}
-
-// Declarations (implementations provided by compiled JS at dist/index.mjs)
-export declare function getContributorStats(
-  opts?: ContributorStatsOptions
-): Promise<GetContributorStatsResult>;
-export declare function parseDateInput(input?: string): string | undefined;
-export declare function analyze(...args: any[]): any; // For advanced custom usage – detailed typing can be added later
-export declare function buildAliasResolver(config: any): {
-  resolve: ((normalized: string, name?: string, email?: string) => string) | null;
-  canonicalDetails: Map<string, { name?: string; email?: string }>;
-};

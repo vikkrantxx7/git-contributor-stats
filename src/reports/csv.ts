@@ -2,7 +2,7 @@ function escapeCSV(v: string | number): string {
   if (v === null || v === undefined) return '';
   const s = String(v);
   if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-    return `"${s.replaceAll(/"/, '""')}"`;
+    return `"${s.replaceAll('"', '""')}"`;
   }
   return s;
 }

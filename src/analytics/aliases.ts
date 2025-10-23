@@ -4,8 +4,8 @@ export function normalizeName(name?: string) {
   return String(name || '')
     .replace(/@.*$/, '')
     .replace(/^svc[_-]/i, '')
-    .replace(/[^a-zA-Z0-9\s._-]/g, '')
-    .replace(/\s+/g, ' ')
+    .replaceAll(/[^a-zA-Z0-9\s._-]/g, '')
+    .replaceAll(/\s+/g, ' ')
     .trim()
     .toLowerCase();
 }
@@ -32,112 +32,208 @@ function levenshteinDistance(a: string, b: string) {
 export function similarityScore(a: string, b: string) {
   try {
     return stringSimilarity(a, b);
-  } catch (_) {
+  } catch (_error) {
+    // Fallback to Levenshtein distance if string-similarity-js fails
     const maxLen = Math.max(a.length, b.length) || 1;
     const dist = levenshteinDistance(a, b);
     return 1 - dist / maxLen;
   }
 }
 
-export type AliasConfig = Record<string, unknown> | Array<unknown> | undefined;
+export type AliasGroup = string | RegExp | string[];
 
-export function buildAliasResolver(config?: AliasConfig) {
-  if (!config)
-    return {
-      resolve: null as null | ((n: string, name?: string, email?: string) => string),
-      canonicalDetails: new Map<string, { name?: string; email?: string }>()
-    };
+export interface AliasCanonicalInfo {
+  name?: string;
+  email?: string;
+}
 
-  let mapEntries: Array<[string, string]> = [];
-  let groups: Array<string | RegExp | Array<string>> = [];
-  const canonicalDetails = new Map<string, { name?: string; email?: string }>();
+export interface AliasConfigObject {
+  groups?: AliasGroup[];
+  map?: Record<string, string>;
+  canonical?: Record<string, AliasCanonicalInfo>;
+  [key: string]:
+    | string
+    | AliasGroup[]
+    | Record<string, string>
+    | Record<string, AliasCanonicalInfo>
+    | undefined;
+}
 
-  if (Array.isArray(config)) {
-    groups = config as Array<string | RegExp | string[]>;
-  } else if (config && typeof config === 'object') {
-    if (Array.isArray(config.groups)) groups = config.groups;
-    if (config.map && typeof config.map === 'object') mapEntries = Object.entries(config.map);
+export type AliasConfig = AliasGroup[] | AliasConfigObject | undefined;
 
-    const flatMapCandidates = Object.keys(config).filter(
-      (k) => k !== 'groups' && k !== 'map' && k !== 'canonical'
-    );
-    if (mapEntries.length === 0 && flatMapCandidates.length) {
-      // Object.entries returns [string, unknown] pairs; coerce values to string when appropriate
-      mapEntries = Object.entries(config)
-        .filter(([k]) => k !== 'groups' && k !== 'canonical')
-        .map(([k, v]) => [k, typeof v === 'string' ? v : String(v)]) as [string, string][];
-    }
+interface ParsedConfig {
+  mapEntries: Array<[string, string]>;
+  groups: Array<string | RegExp | Array<string>>;
+  canonicalDetails: Map<string, { name?: string; email?: string }>;
+}
 
-    if (config.canonical && typeof config.canonical === 'object') {
-      for (const [canonKey, info] of Object.entries(config.canonical as Record<string, unknown>)) {
-        const normKey = normalizeName(canonKey);
-        const infoObj = info as Record<string, unknown> | undefined;
-        canonicalDetails.set(normKey, {
-          name:
-            (infoObj && typeof infoObj.name === 'string' ? (infoObj.name as string) : undefined) ||
-            undefined,
-          email:
-            (infoObj && typeof infoObj.email === 'string'
-              ? (infoObj.email as string)
-              : undefined) || undefined
-        });
-      }
-    }
+function extractMapEntries(config: AliasConfigObject): Array<[string, string]> {
+  if (config.map && typeof config.map === 'object') {
+    return Object.entries(config.map);
   }
 
-  const aliasMap = new Map<string, string>();
-  const regexList: Array<{ regex: RegExp; canonical: string }> = [];
+  // Check for flat map structure
+  const flatMapCandidates = Object.keys(config).filter(
+    (k) => k !== 'groups' && k !== 'map' && k !== 'canonical'
+  );
 
+  if (flatMapCandidates.length === 0) {
+    return [];
+  }
+
+  return Object.entries(config)
+    .filter(([k, v]) => k !== 'groups' && k !== 'canonical' && typeof v === 'string')
+    .map(([k, v]) => [k, v as string] as [string, string]);
+}
+
+function extractCanonicalDetails(
+  config: AliasConfigObject
+): Map<string, { name?: string; email?: string }> {
+  const canonicalDetails = new Map<string, { name?: string; email?: string }>();
+
+  if (!config.canonical || typeof config.canonical !== 'object') {
+    return canonicalDetails;
+  }
+
+  for (const [canonKey, info] of Object.entries(config.canonical)) {
+    const normKey = normalizeName(canonKey);
+    const infoObj = info;
+    canonicalDetails.set(normKey, {
+      name: (infoObj && typeof infoObj.name === 'string' ? infoObj.name : undefined) || undefined,
+      email: (infoObj && typeof infoObj.email === 'string' ? infoObj.email : undefined) || undefined
+    });
+  }
+
+  return canonicalDetails;
+}
+
+function parseAliasConfig(config: AliasConfig): ParsedConfig {
+  const emptyResult: ParsedConfig = {
+    mapEntries: [],
+    groups: [],
+    canonicalDetails: new Map<string, { name?: string; email?: string }>()
+  };
+
+  if (!config) {
+    return emptyResult;
+  }
+
+  if (Array.isArray(config)) {
+    return {
+      ...emptyResult,
+      groups: config as Array<string | RegExp | string[]>
+    };
+  }
+
+  if (typeof config === 'object') {
+    const groups = Array.isArray(config.groups) ? config.groups : [];
+    const mapEntries = extractMapEntries(config);
+    const canonicalDetails = extractCanonicalDetails(config);
+
+    return { mapEntries, groups, canonicalDetails };
+  }
+
+  return emptyResult;
+}
+
+function parseRegexPattern(pattern: string): RegExp | null {
+  if (!pattern.startsWith('/') || pattern.lastIndexOf('/') <= 0) {
+    return null;
+  }
+
+  const lastSlash = pattern.lastIndexOf('/');
+  const regexPattern = pattern.slice(1, lastSlash);
+  const flags = pattern.slice(lastSlash + 1);
+
+  try {
+    return new RegExp(regexPattern, flags);
+  } catch (_error) {
+    // Skip invalid regex patterns
+    return null;
+  }
+}
+
+function processMapEntries(
+  mapEntries: Array<[string, string]>,
+  aliasMap: Map<string, string>,
+  regexList: Array<{ regex: RegExp; canonical: string }>
+): void {
   for (const [alias, canonical] of mapEntries) {
-    if (typeof alias === 'string' && alias.startsWith('/') && alias.lastIndexOf('/') > 0) {
-      const lastSlash = alias.lastIndexOf('/');
-      const pattern = alias.slice(1, lastSlash);
-      const flags = alias.slice(lastSlash + 1);
-      try {
-        const re = new RegExp(pattern, flags);
-        regexList.push({ regex: re, canonical: normalizeName(canonical) });
-      } catch (_) {
-        // ignore
-      }
+    const regex = typeof alias === 'string' ? parseRegexPattern(alias) : null;
+
+    if (regex) {
+      regexList.push({ regex, canonical: normalizeName(canonical) });
     } else {
       aliasMap.set(normalizeName(alias), normalizeName(canonical));
     }
   }
+}
 
+function processGroups(
+  groups: Array<string | RegExp | Array<string>>,
+  aliasMap: Map<string, string>,
+  regexList: Array<{ regex: RegExp; canonical: string }>
+): void {
   for (const g of groups) {
     if (!Array.isArray(g) || g.length === 0) continue;
-    const gs = g as string[];
-    const canonicalCandidate = gs.find((s) => typeof s === 'string' && s.includes('@')) || gs[0];
+
+    const canonicalCandidate = g.find((s) => typeof s === 'string' && s.includes('@')) || g[0];
     const canonicalNorm = normalizeName(String(canonicalCandidate));
 
-    for (const item of gs) {
+    for (const item of g) {
       if (typeof item !== 'string') continue;
-      if (item.startsWith('/') && item.lastIndexOf('/') > 0) {
-        const lastSlash = item.lastIndexOf('/');
-        const pattern = item.slice(1, lastSlash);
-        const flags = item.slice(lastSlash + 1);
-        try {
-          regexList.push({ regex: new RegExp(pattern, flags), canonical: canonicalNorm });
-        } catch (_) {}
+
+      const regex = parseRegexPattern(item);
+      if (regex) {
+        regexList.push({ regex, canonical: canonicalNorm });
       } else {
         aliasMap.set(normalizeName(item), canonicalNorm);
       }
     }
   }
+}
 
-  function resolve(baseNorm: string, name?: string, email?: string) {
+function createResolveFunction(
+  aliasMap: Map<string, string>,
+  regexList: Array<{ regex: RegExp; canonical: string }>
+) {
+  return function resolve(baseNorm: string, name?: string, email?: string): string {
     const mapped = aliasMap.get(baseNorm);
     if (mapped) return mapped;
 
     const rawName = name || '';
     const rawEmail = email || '';
+
     for (const { regex, canonical } of regexList) {
       try {
-        if (regex.test(rawName) || regex.test(rawEmail)) return canonical;
-      } catch (_) {}
+        if (regex.test(rawName) || regex.test(rawEmail)) {
+          return canonical;
+        }
+      } catch (_error) {
+        // Skip regex test failures and continue to next pattern
+      }
     }
+
     return baseNorm;
+  };
+}
+
+export function buildAliasResolver(config?: AliasConfig) {
+  if (!config) {
+    return {
+      resolve: null as null | ((n: string, name?: string, email?: string) => string),
+      canonicalDetails: new Map<string, { name?: string; email?: string }>()
+    };
   }
+
+  const { mapEntries, groups, canonicalDetails } = parseAliasConfig(config);
+  const aliasMap = new Map<string, string>();
+  const regexList: Array<{ regex: RegExp; canonical: string }> = [];
+
+  processMapEntries(mapEntries, aliasMap, regexList);
+  processGroups(groups, aliasMap, regexList);
+
+  const resolve = createResolveFunction(aliasMap, regexList);
 
   return { resolve, canonicalDetails };
 }
