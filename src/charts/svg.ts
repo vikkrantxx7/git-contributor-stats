@@ -22,42 +22,36 @@ export function generateBarChartSVG(
   const chartW = width - margin.left - margin.right;
   const chartH = height - margin.top - margin.bottom;
   const maxVal = Math.max(1, ...values);
-  const denom = Math.max(1, maxBars);
-  const barW = (chartW / denom) * 0.7;
-  const gap = (chartW / denom) * 0.3;
+  const denominator = Math.max(1, maxBars);
+  const barW = (chartW / denominator) * 0.7;
+  const gap = (chartW / denominator) * 0.3;
 
   const svg: string[] = [];
   svg.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`
-  );
-  svg.push(
-    `<style>text{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:12px} .title{font-size:16px;font-weight:700}</style>`
-  );
-  svg.push(`<rect width="100%" height="100%" fill="#fff"/>`);
-  svg.push(
-    `<text class="title" x="${margin.left}" y="${margin.top - 12}">${svgEscape(title)}</text>`
-  );
-
-  // axes
-  svg.push(
-    `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + chartH}" stroke="#333"/>`
-  );
-  svg.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
+    `<style>text{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:12px} .title{font-size:16px;font-weight:700}</style>`,
+    `<rect width="100%" height="100%" fill="#fff"/>`,
+    `<text class="title" x="${margin.left}" y="${margin.top - 12}">${svgEscape(title)}</text>`,
+    // axes
+    `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + chartH}" stroke="#333"/>`,
     `<line x1="${margin.left}" y1="${margin.top + chartH}" x2="${margin.left + chartW}" y2="${margin.top + chartH}" stroke="#333"/>`
   );
 
   // bars
-  labels.forEach((lab, i) => {
+  for (let i = 0; i < labels.length; i++) {
+    const lab = labels[i];
     const x = margin.left + i * (barW + gap) + gap * 0.5;
     const h = Math.round((values[i] / maxVal) * chartH);
     const y = margin.top + (chartH - h);
-    svg.push(`<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="#4e79a7"/>`);
-    svg.push(`<text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle">${values[i]}</text>`);
+    svg.push(
+      `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="#4e79a7"/>`,
+      `<text x="${x + barW / 2}" y="${y - 4}" text-anchor="middle">${values[i]}</text>`
+    );
     const labText = lab.length > 16 ? `${lab.slice(0, 16)}…` : lab;
     svg.push(
       `<g transform="translate(${x + barW / 2},${margin.top + chartH + 4}) rotate(45)"><text text-anchor="start">${svgEscape(labText)}</text></g>`
     );
-  });
+  }
 
   if (maxBars === 0) {
     svg.push(
@@ -70,9 +64,9 @@ export function generateBarChartSVG(
     const val = Math.round((t / 4) * maxVal);
     const yy = margin.top + chartH - Math.round((t / 4) * chartH);
     svg.push(
-      `<line x1="${margin.left - 5}" y1="${yy}" x2="${margin.left}" y2="${yy}" stroke="#333"/>`
+      `<line x1="${margin.left - 5}" y1="${yy}" x2="${margin.left}" y2="${yy}" stroke="#333"/>`,
+      `<text x="${margin.left - 8}" y="${yy + 4}" text-anchor="end">${val}</text>`
     );
-    svg.push(`<text x="${margin.left - 8}" y="${yy + 4}" text-anchor="end">${val}</text>`);
   }
   svg.push(`</svg>`);
   return svg.join('');
@@ -89,9 +83,7 @@ export function generateHeatmapSVG(heatmap: number[][]): string {
 
   const svg: string[] = [];
   svg.push(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`
-  );
-  svg.push(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`,
     `<style>text{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;font-size:10px}</style>`
   );
 
