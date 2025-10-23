@@ -9,13 +9,15 @@ export function parseDateInput(input?: string): string | undefined {
     const unit = rel[2].toLowerCase();
     const now = new Date();
     const d = new Date(now);
-    const mult = unit.startsWith('day')
-      ? 1
-      : unit.startsWith('week')
-        ? 7
-        : unit.startsWith('month')
-          ? 30
-          : 365;
+
+    function getUnitMultiplier(unitStr: string): number {
+      if (unitStr.startsWith('day')) return 1;
+      if (unitStr.startsWith('week')) return 7;
+      if (unitStr.startsWith('month')) return 30;
+      return 365;
+    }
+
+    const mult = getUnitMultiplier(unit);
     d.setDate(now.getDate() - qty * mult);
     return d.toISOString();
   }

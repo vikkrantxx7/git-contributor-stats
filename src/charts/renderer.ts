@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { ensureDir } from '../utils/files.js';
-import { generateBarChartSVG, generateHeatmapSVG } from './svg.js';
+import { ensureDir } from '../utils/files.ts';
+import { generateBarChartSVG, generateHeatmapSVG } from './svg.ts';
 
 interface ChartOptions {
   width?: number;

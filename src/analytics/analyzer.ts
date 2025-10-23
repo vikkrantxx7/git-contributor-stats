@@ -3,9 +3,9 @@ import type {
   TopContributor,
   TopFileEntry,
   TopStatsSummary
-} from '../api.js';
-import { isoWeekKey } from '../utils/dates.js';
-import { normalizeName, similarityScore } from './aliases.js';
+} from '../api.ts';
+import { isoWeekKey } from '../utils/dates.ts';
+import { normalizeName, similarityScore } from './aliases.ts';
 
 type Commit = {
   authorName?: string;

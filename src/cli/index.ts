@@ -2,16 +2,16 @@
 
 import path from 'node:path';
 import process from 'node:process';
-import { isGitRepo } from '../git/utils.js';
-import type { ContributorStatsResult } from '../index.js';
+import { isGitRepo } from '../git/utils.ts';
+import type { ContributorStatsResult } from '../index.ts';
 import {
   generateOutputs,
   generateWorkflow,
   getContributorStats,
   handleStdoutOutput
-} from '../index.js';
-import { safeReadPackageJson } from '../utils/files.js';
-import { setupCLI } from './options.js';
+} from '../index.ts';
+import { safeReadPackageJson } from '../utils/files.ts';
+import { setupCLI } from './options.ts';
 
 async function main(argv: string[]): Promise<void> {
   const pkg = safeReadPackageJson();

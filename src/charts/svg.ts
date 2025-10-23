@@ -1,4 +1,4 @@
-import { svgEscape } from '../utils/formatting.js';
+import { svgEscape } from '../utils/formatting.ts';
 
 interface BarChartOptions {
   limit?: number;

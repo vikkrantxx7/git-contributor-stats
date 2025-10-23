@@ -1,5 +1,5 @@
-import type { ContributorBasic } from '../api.js';
-import { formatNumber } from '../utils/formatting.js';
+import type { ContributorBasic } from '../api.ts';
+import { formatNumber } from '../utils/formatting.ts';
 
 type Commit = {
   authorName?: string;

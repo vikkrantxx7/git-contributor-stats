@@ -30,6 +30,16 @@ export interface TopStatsEntry {
   changes?: number;
 }
 
+export function getMetricValue(entry: TopStatsEntry, metricKey: string): number | undefined {
+  if (typeof entry[metricKey as keyof TopStatsEntry] === 'number') {
+    return entry[metricKey as keyof TopStatsEntry] as number;
+  }
+  if (metricKey === 'net') {
+    return (entry.added || 0) - (entry.deleted || 0);
+  }
+  return undefined;
+}
+
 export function formatTopStatsLines(
   ts: Record<string, TopStatsEntry>,
   metrics: string[]
@@ -41,14 +51,10 @@ export function formatTopStatsLines(
 
   function line(label: string, entry: TopStatsEntry | undefined, metricKey: string): string {
     if (!entry) return `${label}: —`;
-    const metricVal =
-      entry && typeof entry[metricKey as keyof TopStatsEntry] === 'number'
-        ? entry[metricKey as keyof TopStatsEntry]
-        : metricKey === 'net'
-          ? (entry.added || 0) - (entry.deleted || 0)
-          : undefined;
+    const metricVal = getMetricValue(entry, metricKey);
     const suffix = typeof metricVal === 'number' ? ` (${metricVal})` : '';
-    const who = `${entry.name || '—'}${entry.email ? ` <${entry.email}>` : ''}`;
+    const emailPart = entry.email ? ` <${entry.email}>` : '';
+    const who = `${entry.name || '—'}${emailPart}`;
     return `${label}: ${who}${suffix}`;
   }
 

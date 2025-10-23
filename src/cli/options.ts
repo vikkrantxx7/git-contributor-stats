@@ -34,11 +34,8 @@ export function setupCLI(pkg: PackageJson): Command {
       'Sort by: changes | commits | additions | deletions',
       'changes'
     )
-    .option(
-      '-t, --top <n>',
-      'Limit to top N contributors (for table/CSV stdout)',
-      (v: string) => parseInt(v, 10),
-      undefined
+    .option('-t, --top <n>', 'Limit to top N contributors (for table/CSV stdout)', (v: string) =>
+      Number.parseInt(v, 10)
     )
     .option('-f, --format <kind>', 'Output format to stdout: table | json | csv', 'table')
     .option('--json', 'Print comprehensive JSON analysis to stdout', false)
@@ -75,7 +72,7 @@ export function setupCLI(pkg: PackageJson): Command {
     .option(
       '--similarity <threshold>',
       'Name merge similarity threshold (0..1)',
-      (v: string) => parseFloat(v),
+      (v: string) => Number.parseFloat(v),
       0.85
     )
     .option('--alias-file <aliasFile>', 'Path to alias mapping JSON file')

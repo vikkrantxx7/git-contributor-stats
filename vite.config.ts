@@ -16,8 +16,8 @@ export default defineConfig({
     // Multi-entry build: programmatic API (index) + CLI entry (cli)
     rollupOptions: {
       input: {
-        index: 'src/index.js',
-        cli: 'src/cli/entry.js'
+        index: 'src/index.ts',
+        cli: 'src/cli/entry.ts'
       },
       external: externals,
       output: {

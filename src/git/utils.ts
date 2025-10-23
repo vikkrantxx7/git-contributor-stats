@@ -17,9 +17,9 @@ export function runGit(repoPath: string, args: string[]): GitResult {
   });
 
   if (res.error) {
-    const err = res.error as any;
+    const err = res.error as NodeJS.ErrnoException;
     const msg =
-      err && err.code === 'ENOENT'
+      err.code === 'ENOENT'
         ? 'Git is not installed or not in PATH.'
         : `Failed to execute git: ${res.error.message}`;
     return { ok: false, error: msg, code: res.status ?? 2 };
