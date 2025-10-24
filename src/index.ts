@@ -47,8 +47,6 @@ export interface ContributorStatsOptions extends ApiContributorStatsOptions {
   md?: string;
   html?: string;
   charts?: boolean;
-  svg?: boolean;
-  svgDir?: string;
   chartsDir?: string;
   chartFormat?: string;
   json?: boolean;
@@ -80,17 +78,14 @@ export interface ContributorStatsResult {
   };
 }
 
-export async function getContributorStats(
-  opts: ContributorStatsOptions = {}
-): Promise<ContributorStatsResult> {
-  const repo = path.resolve(process.cwd(), opts.repo || '.');
-  if (!isGitRepo(repo)) throw new Error(`Not a Git repository: ${repo}`);
-  const debug = (...msg: unknown[]) => {
-    if (opts.verbose) console.error('[debug]', ...msg);
-  };
-
-  let aliasConfig: AliasConfig = (opts.aliasConfig as AliasConfig) || undefined;
+// Helper to load alias configuration from file or options
+function loadAliasConfig(
+  opts: ContributorStatsOptions,
+  repo: string
+): { config: AliasConfig; path: string | null } {
+  let aliasConfig: AliasConfig = opts.aliasConfig ?? undefined;
   let aliasPath: string | null = null;
+
   if (!aliasConfig) {
     if (opts.aliasFile) {
       aliasPath = path.resolve(process.cwd(), opts.aliasFile);
@@ -101,6 +96,39 @@ export async function getContributorStats(
       if (aliasConfig) aliasPath = defaultAlias;
     }
   }
+
+  return { config: aliasConfig, path: aliasPath };
+}
+
+// Helper to normalize paths option into array
+function normalizePaths(paths: string | string[] | undefined): string[] {
+  if (Array.isArray(paths)) {
+    return paths;
+  }
+  if (paths) {
+    return [paths];
+  }
+  return [];
+}
+
+// Helper to get repository branch name
+function getRepoBranch(repo: string, optsBranch?: string): string | null {
+  if (optsBranch) return optsBranch;
+  const result = runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']);
+  return result.stdout?.trim() || null;
+}
+
+export async function getContributorStats(
+  opts: ContributorStatsOptions = {}
+): Promise<ContributorStatsResult> {
+  const repo = path.resolve(process.cwd(), opts.repo || '.');
+  if (!isGitRepo(repo)) throw new Error(`Not a Git repository: ${repo}`);
+
+  const debug = (...msg: unknown[]) => {
+    if (opts.verbose) console.error('[debug]', ...msg);
+  };
+
+  const { config: aliasConfig, path: aliasPath } = loadAliasConfig(opts, repo);
   if (aliasPath) debug(`aliasFile=${aliasPath}`);
   debug(`repo=${repo}`);
 
@@ -108,7 +136,7 @@ export async function getContributorStats(
 
   const since = parseDateInput(opts.since);
   const until = parseDateInput(opts.until);
-  const paths = Array.isArray(opts.paths) ? opts.paths : opts.paths ? [opts.paths] : [];
+  const paths = normalizePaths(opts.paths);
 
   const gitArgs = buildGitLogArgs({
     branch: opts.branch,
@@ -143,12 +171,9 @@ export async function getContributorStats(
 
   const repoRootResult = runGit(repo, ['rev-parse', '--show-toplevel']);
   const repoRoot = repoRootResult.ok ? (repoRootResult.stdout?.trim() ?? repo) : repo;
-  const branch =
-    opts.branch ||
-    (runGit(repo, ['rev-parse', '--abbrev-ref', 'HEAD']).stdout || '').trim() ||
-    null;
+  const branch = getRepoBranch(repo, opts.branch);
 
-  const final: ContributorStatsResult = {
+  return {
     meta: {
       generatedAt: new Date().toISOString(),
       repo: repoRoot,
@@ -166,8 +191,25 @@ export async function getContributorStats(
     busFactor: analysis.busFactor,
     basic: { contributors: analysis.topContributors, meta, groupBy }
   };
+}
 
-  return final;
+// Helper to map TopContributor to Contributor for reports
+function toReportContributor(tc: TopContributor): {
+  name: string;
+  email: string;
+  commits: number;
+  added: number;
+  deleted: number;
+  topFiles: TopFileEntry[];
+} {
+  return {
+    name: tc.name ?? '',
+    email: tc.email ? tc.email : '',
+    commits: tc.commits,
+    added: tc.added,
+    deleted: tc.deleted,
+    topFiles: tc.topFiles ?? []
+  };
 }
 
 export async function generateOutputs(
@@ -178,25 +220,6 @@ export async function generateOutputs(
   const writeCSVPath = opts.csv || (outDir ? path.join(outDir, 'contributors.csv') : undefined);
   const writeMDPath = opts.md || (outDir ? path.join(outDir, 'report.md') : undefined);
   const writeHTMLPath = opts.html || (outDir ? path.join(outDir, 'report.html') : undefined);
-
-  // Helper to map TopContributor to Contributor for reports
-  function toReportContributor(tc: TopContributor): {
-    name: string;
-    email: string;
-    commits: number;
-    added: number;
-    deleted: number;
-    topFiles: TopFileEntry[];
-  } {
-    return {
-      name: tc.name ?? '',
-      email: tc.email ? tc.email : '',
-      commits: tc.commits,
-      added: tc.added,
-      deleted: tc.deleted,
-      topFiles: tc.topFiles ?? []
-    };
-  }
 
   if (writeCSVPath) {
     ensureDir(path.dirname(writeCSVPath));
@@ -245,20 +268,14 @@ export async function generateCharts(
   opts: ContributorStatsOptions = {},
   outDir?: string
 ): Promise<void> {
-  const chartsRequested = opts.charts || opts.svg || opts.svgDir;
+  const chartsRequested = opts.charts;
   if (!chartsRequested) return;
 
-  const chartsDir = outDir || opts.chartsDir || opts.svgDir || path.join(process.cwd(), 'charts');
+  const chartsDir = outDir || opts.chartsDir || path.join(process.cwd(), 'charts');
   ensureDir(chartsDir);
 
   const formatOpt = String(opts.chartFormat || 'svg').toLowerCase();
   const formats = formatOpt === 'both' ? ['svg', 'png'] : [formatOpt === 'png' ? 'png' : 'svg'];
-
-  if ((opts.svg || opts.svgDir) && !opts.charts && !opts.chartFormat && !opts.chartsDir) {
-    console.error(
-      '[warn] --svg/--svg-dir are deprecated; prefer --charts/--charts-dir/--chart-format'
-    );
-  }
 
   const names = final.topContributors.map((c) => String(c.name || ''));
   const commitsVals = final.topContributors.map((c) => Number(c.commits || 0));
@@ -331,7 +348,7 @@ export async function ensureFallbackSVGs(
 export async function generateWorkflow(repo: string): Promise<void> {
   const wfPath = path.join(repo, '.github', 'workflows', 'git-contributor-stats.yml');
   ensureDir(path.dirname(wfPath));
-  const content = `name: Git Contributor Stats\non:\n  push:\n    branches: [main]\n  workflow_dispatch:\n\njobs:\n  report:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '18'\n      - name: Install deps\n        run: npm ci || npm i\n      - name: Run report\n        run: npx git-contributor-stats --out-dir=./reports --html=reports/report.html --json --svg\n      - name: Upload report\n        uses: actions/upload-artifact@v4\n        with:\n          name: git-contrib-report\n          path: reports\n`;
+  const content = `name: Git Contributor Stats\non:\n  push:\n    branches: [main]\n  workflow_dispatch:\n\njobs:\n  report:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '18'\n      - name: Install deps\n        run: npm ci || npm i\n      - name: Run report\n        run: npx git-contributor-stats --out-dir=./reports --html=reports/report.html --json --charts\n      - name: Upload report\n        uses: actions/upload-artifact@v4\n        with:\n          name: git-contrib-report\n          path: reports\n`;
   fs.writeFileSync(wfPath, content, 'utf8');
   console.error(`Wrote sample GitHub Actions workflow to ${wfPath}`);
 }
@@ -398,4 +415,6 @@ export function handleStdoutOutput(
   printTable(tableContributors, final.basic.meta, groupBy);
 }
 
-export { parseDateInput, analyze, buildAliasResolver };
+export { buildAliasResolver } from './analytics/aliases.ts';
+export { analyze } from './analytics/analyzer.ts';
+export { parseDateInput } from './utils/dates.ts';

@@ -3,16 +3,10 @@
 
 # Generated reports and charts
 /charts/
-/debug-charts/
-/test-charts/
+/reports/
 
 # Build artifacts
 /dist/
-
-# Debug and log files
-*.log
-debug.txt
-smoke-debug.log
 
 # IDE files
 .idea/

@@ -47,15 +47,6 @@ export function setupCLI(pkg: PackageJson): Command {
       'Write selected outputs into the directory (uses default filenames)'
     )
     .option(
-      '--svg',
-      'Write SVG charts (top commits, net lines, heatmap) to out-dir (or ./charts if no out-dir)',
-      false
-    )
-    .option(
-      '--svg-dir <svgDir>',
-      'Directory to write SVG charts (overrides default when --svg is set)'
-    )
-    .option(
       '--charts',
       'Generate charts (defaults to SVG). Use --chart-format to switch formats.',
       false
@@ -90,7 +81,7 @@ export function setupCLI(pkg: PackageJson): Command {
     .option('-v, --verbose', 'Verbose logging', false)
     .addHelpText(
       'after',
-      `\nExamples:\n  # Top 10 contributors in the current repo\n  git-contributor-stats --top 10\n\n  # Only for the last 90 days on main\n  git-contributor-stats -b main --since 90.days\n\n  # Stats for a specific folder, as JSON (comprehensive)\n  git-contributor-stats src/ --json\n\n  # Generate Markdown and HTML reports into reports/ and write SVG charts\n  git-contributor-stats --out-dir reports --md reports/report.md --html reports/report.html --svg\n\n  # Merge similar contributor names (default threshold 0.85)\n  git-contributor-stats --similarity 0.9\n`
+      `\nExamples:\n  # Top 10 contributors in the current repo\n  git-contributor-stats --top 10\n\n  # Only for the last 90 days on main\n  git-contributor-stats -b main --since 90.days\n\n  # Stats for a specific folder, as JSON (comprehensive)\n  git-contributor-stats src/ --json\n\n  # Generate Markdown and HTML reports into reports/ and write charts\n  git-contributor-stats --out-dir reports --md reports/report.md --html reports/report.html --charts\n\n  # Merge similar contributor names (default threshold 0.85)\n  git-contributor-stats --similarity 0.9\n`
     );
 
   return program;
