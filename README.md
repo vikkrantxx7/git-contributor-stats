@@ -5,6 +5,21 @@ A powerful, fast Node.js CLI and library to analyze Git repository contributions
 [![npm version](https://img.shields.io/npm/v/git-contributor-stats.svg)](https://www.npmjs.com/package/git-contributor-stats)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
+---
+
+> **📦 Modular & Tree-Shakeable**
+> 
+> This package uses subpath exports for optimal bundle sizes. Import only what you need:
+> - `git-contributor-stats/stats` - Core statistics
+> - `git-contributor-stats/charts` - Chart generation
+> - `git-contributor-stats/reports` - Report generation
+> - `git-contributor-stats/output` - Console output
+> - `git-contributor-stats/workflow` - GitHub Actions workflow
+> 
+> See [Tree-Shaking Guide](./TREE-SHAKING-GUIDE.md) and [Refactoring Summary](./REFACTORING-SUMMARY.md) for details.
+
+---
+
 ## Overview
 
 Analyze your Git repository to gain insights into contributor activity, code ownership, commit patterns, and project health. Get comprehensive statistics including commits, lines added/deleted, file changes, temporal patterns, bus factor analysis, and beautiful visualizations.
@@ -83,7 +98,7 @@ cd git-contributor-stats
 npm install
 npm run build
 ```
-
+import { getContributorStats } from 'git-contributor-stats/stats';
 ## Quick Start
 
 ### CLI - Basic Usage
@@ -108,7 +123,8 @@ git-contributor-stats src/ --top 20
 ### Programmatic - Basic Usage
 
 ```javascript
-import { getContributorStats } from 'git-contributor-stats';
+// Import only what you need using subpath exports
+import { getContributorStats } from 'git-contributor-stats/stats';
 
 const stats = await getContributorStats({
   repo: '.',
@@ -392,7 +408,7 @@ Use `git-contributor-stats` as a library in your Node.js/TypeScript projects.
 ### Basic Usage
 
 ```javascript
-import { getContributorStats } from 'git-contributor-stats';
+import { getContributorStats } from 'git-contributor-stats/stats';
 
 // Analyze current repository
 const stats = await getContributorStats({
@@ -516,6 +532,8 @@ console.log(`- Active contributors: ${stats.topContributors.length}`);
 #### Filter by Author and Path
 
 ```javascript
+import { getContributorStats } from 'git-contributor-stats/stats';
+
 const stats = await getContributorStats({
   repo: '.',
   author: 'jane@example.com',
@@ -524,14 +542,15 @@ const stats = await getContributorStats({
 });
 
 console.log(`Jane's contributions in src/ and lib/ (last 30 days):`);
-console.log(`- Commits: ${stats.totalContributors[0]?.commits || 0}`);
+console.log(`- Commits: ${stats.topContributors[0]?.commits || 0}`);
 console.log(`- Files changed: ${Object.keys(stats.topContributors[0]?.files || {}).length}`);
 ```
 
 #### Generate Reports Programmatically
 
 ```javascript
-import { getContributorStats, generateOutputs } from 'git-contributor-stats';
+import { getContributorStats } from 'git-contributor-stats/stats';
+import { generateOutputs } from 'git-contributor-stats/reports';
 
 const stats = await getContributorStats({
   repo: '.',
@@ -553,7 +572,8 @@ console.log('Reports generated in ./reports/');
 #### Generate Charts Programmatically
 
 ```javascript
-import { getContributorStats, generateCharts } from 'git-contributor-stats';
+import { getContributorStats } from 'git-contributor-stats/stats';
+import { generateCharts } from 'git-contributor-stats/charts';
 
 const stats = await getContributorStats({
   repo: '.',
@@ -582,6 +602,8 @@ await generateCharts(stats, {
 #### Using Alias Configuration Inline
 
 ```javascript
+import { getContributorStats } from 'git-contributor-stats/stats';
+
 const stats = await getContributorStats({
   repo: '.',
   aliasConfig: {
@@ -607,7 +629,7 @@ const stats = await getContributorStats({
 #### Custom Analysis and Reporting
 
 ```javascript
-import { getContributorStats } from 'git-contributor-stats';
+import { getContributorStats } from 'git-contributor-stats/stats';
 
 const stats = await getContributorStats({
   repo: '.',
@@ -650,8 +672,8 @@ import type {
   TopContributor,
   TopStatsSummary,
   BusFactorInfo
-} from 'git-contributor-stats';
-import { getContributorStats } from 'git-contributor-stats';
+} from 'git-contributor-stats/stats';
+import { getContributorStats } from 'git-contributor-stats/stats';
 
 const options: ContributorStatsOptions = {
   repo: '.',
@@ -669,27 +691,27 @@ const busFactor: BusFactorInfo = stats.busFactor;
 ### Exported Functions
 
 ```typescript
-// Main analysis function
+// From 'git-contributor-stats/stats'
 export async function getContributorStats(
   options?: ContributorStatsOptions
 ): Promise<ContributorStatsResult>
 
-// Generate output files
+// From 'git-contributor-stats/reports'
 export async function generateOutputs(
   stats: ContributorStatsResult,
   options?: ContributorStatsOptions
 ): Promise<void>
 
-// Generate charts
+// From 'git-contributor-stats/charts'
 export async function generateCharts(
   stats: ContributorStatsResult,
   options?: ContributorStatsOptions
 ): Promise<void>
 
-// Generate GitHub Actions workflow
+// From 'git-contributor-stats/workflow'
 export async function generateWorkflow(repo: string): Promise<void>
 
-// Utility functions
+// Utility functions available from various subpaths
 export { parseDateInput, analyze, buildAliasResolver }
 ```
 
@@ -907,7 +929,7 @@ git-contributor-stats \
 #### Monitor Repository Health
 
 ```javascript
-import { getContributorStats } from 'git-contributor-stats';
+import { getContributorStats } from 'git-contributor-stats/stats';
 
 async function checkRepoHealth() {
   const stats = await getContributorStats({
@@ -942,8 +964,8 @@ checkRepoHealth();
 #### Generate Custom Dashboard
 
 ```javascript
-import { getContributorStats, generateOutputs } from 'git-contributor-stats';
-import fs from 'fs/promises';
+import { getContributorStats } from 'git-contributor-stats/stats';
+import { generateOutputs } from 'git-contributor-stats/reports';
 
 async function generateDashboard() {
   const [weekly, monthly, quarterly] = await Promise.all([
@@ -1120,6 +1142,12 @@ npm run report
 ```
 git-contributor-stats/
 ├── src/
+│   ├── features/
+│   │   ├── stats.ts          # Core statistics (tree-shakeable)
+│   │   ├── charts.ts         # Chart generation (tree-shakeable)
+│   │   ├── reports.ts        # Report generation (tree-shakeable)
+│   │   ├── output.ts         # Console output (tree-shakeable)
+│   │   └── workflow.ts       # GitHub Actions workflow (tree-shakeable)
 │   ├── cli/
 │   │   ├── entry.ts          # CLI entry point
 │   │   ├── index.ts          # CLI logic
@@ -1142,15 +1170,38 @@ git-contributor-stats/
 │   │   ├── dates.ts          # Date parsing
 │   │   ├── files.ts          # File operations
 │   │   └── formatting.ts     # Output formatting
-│   ├── api.ts                # TypeScript types
-│   └── index.ts              # Main API export
+│   └── api.ts                # TypeScript types
 ├── dist/                      # Built files
+│   ├── features/             # Feature modules (separate entry points)
+│   └── chunks/               # Shared code chunks
 ├── tests/                     # Test files
 ├── package.json
 ├── tsconfig.json
 ├── vite.config.ts
 └── vitest.config.ts
 ```
+
+### Tree-Shaking & Modularization
+
+This package is designed for optimal tree-shaking and minimal bundle sizes:
+
+- **Subpath Exports Only**: All features must be imported from their specific subpaths
+- **No Barrel Export**: There is no default export from the package root
+- **Feature Isolation**: Each feature module is independently tree-shakeable
+- **Shared Chunks**: Common code is automatically split into shared chunks during build
+- **Bundle Size Reduction**: Import only what you need - see bundle size comparisons in [Tree-Shaking Guide](./TREE-SHAKING-GUIDE.md)
+
+**Available Subpaths:**
+- `git-contributor-stats/stats` - Core statistics generation (~80KB when used alone)
+- `git-contributor-stats/charts` - Chart generation with Chart.js
+- `git-contributor-stats/reports` - Report generation (CSV, Markdown, HTML)
+- `git-contributor-stats/output` - Console output formatting
+- `git-contributor-stats/workflow` - GitHub Actions workflow generator
+
+For detailed information about the refactoring and architecture decisions, see:
+- [Refactoring Summary](./REFACTORING-SUMMARY.md) - Overview of changes and benefits
+- [Tree-Shaking Guide](./TREE-SHAKING-GUIDE.md) - Bundle size examples and verification
+- [Refactoring Checklist](./REFACTORING-CHECKLIST.md) - Complete task list and results
 
 ### Testing
 

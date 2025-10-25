@@ -1,7 +1,6 @@
 import { builtinModules } from 'node:module';
 import { defineConfig } from 'vite';
 
-// Externalize Node builtins and runtime deps to avoid bundling them
 const externals = [
   ...builtinModules,
   ...builtinModules.map((m) => `node:${m}`),
@@ -13,21 +12,38 @@ const externals = [
 
 export default defineConfig({
   build: {
-    // Multi-entry build: programmatic API (index) + CLI entry (cli)
     rollupOptions: {
       input: {
-        index: 'src/index.ts',
-        cli: 'src/cli/entry.ts'
+        cli: 'src/cli/entry.ts',
+        'features/stats': 'src/features/stats.ts',
+        'features/charts': 'src/features/charts.ts',
+        'features/reports': 'src/features/reports.ts',
+        'features/output': 'src/features/output.ts',
+        'features/workflow': 'src/features/workflow.ts'
       },
       external: externals,
       output: {
         entryFileNames: '[name].mjs',
-        chunkFileNames: 'chunks/[name]-[hash].mjs'
+        chunkFileNames: 'chunks/[name]-[hash].mjs',
+        preserveModules: false,
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            return 'vendor';
+          }
+          if (id.includes('src/utils')) {
+            return 'utils';
+          }
+          if (id.includes('src/analytics')) {
+            return 'analytics';
+          }
+          if (id.includes('src/git')) {
+            return 'git';
+          }
+        }
       }
     },
     target: 'node18',
     sourcemap: true,
-    // Keep module structure minimal for Node usage
     minify: false,
     outDir: 'dist',
     emptyOutDir: true

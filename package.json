@@ -1,6 +1,6 @@
 {
   "name": "git-contributor-stats",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": false,
   "description": "CLI to compute contributor and repository statistics from a Git repository (commits, lines added/deleted, frequency, heatmap, bus-factor), with filters and multiple output formats.",
   "keywords": [
@@ -31,17 +31,31 @@
   "sideEffects": false,
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs"
+    "./stats": {
+      "types": "./dist/features/stats.d.ts",
+      "import": "./dist/features/stats.mjs"
+    },
+    "./charts": {
+      "types": "./dist/features/charts.d.ts",
+      "import": "./dist/features/charts.mjs"
+    },
+    "./reports": {
+      "types": "./dist/features/reports.d.ts",
+      "import": "./dist/features/reports.mjs"
+    },
+    "./output": {
+      "types": "./dist/features/output.d.ts",
+      "import": "./dist/features/output.mjs"
+    },
+    "./workflow": {
+      "types": "./dist/features/workflow.d.ts",
+      "import": "./dist/features/workflow.mjs"
     },
     "./cli": {
       "types": "./dist/cli.d.ts",
       "import": "./dist/cli.mjs"
-    },
-    "./package.json": "./package.json"
+    }
   },
-  "types": "dist/index.d.ts",
   "bin": {
     "git-contributor-stats": "./dist/cli.mjs"
   },

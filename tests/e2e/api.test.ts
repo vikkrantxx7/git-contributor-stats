@@ -1,6 +1,6 @@
 // filepath: tests/e2e/api.test.ts
 import { execa } from 'execa';
-import { getContributorStats } from '../../src/index.ts';
+import { getContributorStats } from '../../src/features/stats';
 import { cleanupRepo, createTempRepo, initRepo, seedBasicHistory } from '../utils/repo.ts';
 
 async function getCommitCount(repoDir: string): Promise<number> {

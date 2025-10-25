@@ -2,14 +2,12 @@
 
 import path from 'node:path';
 import process from 'node:process';
+import { generateCharts } from '../features/charts.ts';
+import { handleStdoutOutput } from '../features/output.ts';
+import { generateReports } from '../features/reports.ts';
+import { type ContributorStatsResult, getContributorStats } from '../features/stats.ts';
+import { generateWorkflow } from '../features/workflow.ts';
 import { isGitRepo } from '../git/utils.ts';
-import type { ContributorStatsResult } from '../index.ts';
-import {
-  generateOutputs,
-  generateWorkflow,
-  getContributorStats,
-  handleStdoutOutput
-} from '../index.ts';
 import { safeReadPackageJson } from '../utils/files.ts';
 import { setupCLI } from './options.ts';
 
@@ -51,12 +49,18 @@ async function main(argv: string[]): Promise<void> {
     process.exit(2);
   }
 
-  await generateOutputs(final, opts);
+  // Generate reports
+  await generateReports(final, opts);
 
+  // Generate charts
+  await generateCharts(final, opts, opts.outDir);
+
+  // Generate workflow if requested
   if (opts.generateWorkflow) {
     await generateWorkflow(repo);
   }
 
+  // Handle stdout output
   handleStdoutOutput(final, opts);
 }
 

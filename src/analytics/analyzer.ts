@@ -1,11 +1,47 @@
-import type {
-  ContributorsMapEntry,
-  TopContributor,
-  TopFileEntry,
-  TopStatsSummary
-} from '../api.ts';
 import { isoWeekKey } from '../utils/dates.ts';
 import { normalizeName, similarityScore } from './aliases.ts';
+
+export interface FileStats {
+  changes: number;
+  added: number;
+  deleted: number;
+}
+
+export interface TopFileEntry {
+  filename: string;
+  changes: number;
+  added: number;
+  deleted: number;
+}
+
+export interface TopContributor {
+  name?: string;
+  email?: string;
+  commits: number;
+  added: number;
+  deleted: number;
+  net: number;
+  changes: number;
+  files: Record<string, FileStats>;
+  topFiles: TopFileEntry[];
+}
+
+export interface ContributorsMapEntry {
+  name?: string;
+  email?: string;
+  commits: number;
+  added: number;
+  deleted: number;
+  files: Record<string, FileStats>;
+}
+
+export interface TopStatsSummary {
+  byCommits: TopContributor | null;
+  byAdditions: TopContributor | null;
+  byDeletions: TopContributor | null;
+  byNet: TopContributor | null;
+  byChanges: TopContributor | null;
+}
 
 type Commit = {
   authorName?: string;
@@ -249,13 +285,21 @@ export function analyze(
   const filesSingleOwner = buildBusFactor(fileToContributors, merged, contribMap);
   const topStats = buildTopStats(topContributors);
 
+  // Provide all required BusFactorInfo properties
+  const busFactorInfo = {
+    busFactor: 0, // TODO: implement actual bus factor calculation if needed
+    candidates: [], // TODO: implement candidate calculation if needed
+    details: undefined, // or provide details if available
+    filesSingleOwner
+  };
+
   return {
     contributors: merged,
     topContributors,
     totalCommits,
     commitFrequency: { monthly: commitFrequencyMonthly, weekly: commitFrequencyWeekly },
     heatmap,
-    busFactor: { filesSingleOwner },
+    busFactor: busFactorInfo,
     topStats
   } as const;
 }

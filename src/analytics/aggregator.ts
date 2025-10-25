@@ -1,5 +1,16 @@
-import type { ContributorBasic } from '../api.ts';
 import { formatNumber } from '../utils/formatting.ts';
+
+export interface ContributorBasic {
+  key: string;
+  name: string;
+  emails: string[];
+  commits: number;
+  additions: number;
+  deletions: number;
+  changes: number;
+  firstCommitDate?: string;
+  lastCommitDate?: string;
+}
 
 type Commit = {
   authorName?: string;
