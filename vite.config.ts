@@ -6,8 +6,7 @@ const externals = [
   ...builtinModules.map((m) => `node:${m}`),
   'commander',
   'chart.js',
-  'chartjs-node-canvas',
-  'string-similarity-js'
+  'chartjs-node-canvas'
 ];
 
 export default defineConfig({

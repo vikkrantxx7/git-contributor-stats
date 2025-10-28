@@ -1,44 +1,4 @@
-import { stringSimilarity } from 'string-similarity-js';
-
-export function normalizeName(name?: string) {
-  return String(name || '')
-    .replace(/@.*$/, '')
-    .replace(/^svc[_-]/i, '')
-    .replaceAll(/[^a-zA-Z0-9\s._-]/g, '')
-    .replaceAll(/\s+/g, ' ')
-    .trim()
-    .toLowerCase();
-}
-
-function levenshteinDistance(a: string, b: string) {
-  const m = a.length,
-    n = b.length;
-  if (m === 0) return n;
-  if (n === 0) return m;
-
-  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-      dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
-    }
-  }
-  return dp[m][n];
-}
-
-export function similarityScore(a: string, b: string) {
-  try {
-    return stringSimilarity(a, b);
-  } catch (_error) {
-    // Fallback to Levenshtein distance if string-similarity-js fails
-    const maxLen = Math.max(a.length, b.length) || 1;
-    const dist = levenshteinDistance(a, b);
-    return 1 - dist / maxLen;
-  }
-}
+import { normalizeContributorName } from '../utils/normalization.ts';
 
 export type AliasGroup = string | RegExp | string[];
 
@@ -96,7 +56,7 @@ function extractCanonicalDetails(
   }
 
   for (const [canonKey, info] of Object.entries(config.canonical)) {
-    const normKey = normalizeName(canonKey);
+    const normKey = normalizeContributorName(canonKey);
     const infoObj = info;
     canonicalDetails.set(normKey, {
       name: (infoObj && typeof infoObj.name === 'string' ? infoObj.name : undefined) || undefined,
@@ -162,9 +122,9 @@ function processMapEntries(
     const regex = typeof alias === 'string' ? parseRegexPattern(alias) : null;
 
     if (regex) {
-      regexList.push({ regex, canonical: normalizeName(canonical) });
+      regexList.push({ regex, canonical: normalizeContributorName(canonical) });
     } else {
-      aliasMap.set(normalizeName(alias), normalizeName(canonical));
+      aliasMap.set(normalizeContributorName(alias), normalizeContributorName(canonical));
     }
   }
 }
@@ -178,7 +138,7 @@ function processGroups(
     if (!Array.isArray(g) || g.length === 0) continue;
 
     const canonicalCandidate = g.find((s) => typeof s === 'string' && s.includes('@')) || g[0];
-    const canonicalNorm = normalizeName(String(canonicalCandidate));
+    const canonicalNorm = normalizeContributorName(String(canonicalCandidate));
 
     for (const item of g) {
       if (typeof item !== 'string') continue;
@@ -187,7 +147,7 @@ function processGroups(
       if (regex) {
         regexList.push({ regex, canonical: canonicalNorm });
       } else {
-        aliasMap.set(normalizeName(item), canonicalNorm);
+        aliasMap.set(normalizeContributorName(item), canonicalNorm);
       }
     }
   }

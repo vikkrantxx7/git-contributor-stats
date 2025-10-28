@@ -1,5 +1,5 @@
 import { isoWeekKey } from '../utils/dates.ts';
-import { normalizeName, similarityScore } from './aliases.ts';
+import { findSimilarKey, getDisplayDetails, normalizeKey } from './aggregator.ts';
 
 export interface FileStats {
   changes: number;
@@ -50,16 +50,6 @@ type Commit = {
   files?: Array<{ filename: string; added: number; deleted: number }>;
 };
 
-function findSimilarKey(norm: string, mergedKeys: string[], threshold: number): string | null {
-  for (const mk of mergedKeys) {
-    const sim = similarityScore(norm, mk);
-    if (sim >= threshold) {
-      return mk;
-    }
-  }
-  return null;
-}
-
 function mergeFilesIntoTarget(target: ContributorsMapEntry, src: ContributorsMapEntry): void {
   for (const [fName, info] of Object.entries(src.files || {})) {
     const inf = info as { changes: number; added: number; deleted: number };
@@ -86,16 +76,15 @@ export function mergeSimilarContributors(
   const keys = Object.keys(contribMap);
   const merged: Record<string, ContributorsMapEntry & { normalized?: string }> = {};
 
-  for (const k of keys) {
-    const norm = k;
-    const found = findSimilarKey(norm, Object.keys(merged), threshold);
+  for (const key of keys) {
+    const found = findSimilarKey(key, Object.keys(merged), threshold);
 
     if (found) {
-      mergeContributorIntoTarget(merged[found], contribMap[k]);
+      mergeContributorIntoTarget(merged[found], contribMap[key]);
     } else {
-      const src = contribMap[k];
-      merged[norm] = {
-        normalized: norm,
+      const src = contribMap[key];
+      merged[key] = {
+        normalized: key,
         name: src.name,
         email: src.email,
         commits: src.commits,
@@ -117,15 +106,12 @@ function getOrCreateContributor(
   canonicalDetails?: Map<string, { name?: string; email?: string }>
 ): ContributorsMapEntry {
   if (!contribMap[normalized]) {
-    let displayName = name;
-    let displayEmail = email;
-    if (canonicalDetails?.has(normalized)) {
-      const info = canonicalDetails.get(normalized);
-      if (info) {
-        displayName = info.name || displayName;
-        displayEmail = info.email || displayEmail;
-      }
-    }
+    const { name: displayName, email: displayEmail } = getDisplayDetails(
+      normalized,
+      name,
+      email,
+      canonicalDetails
+    );
     contribMap[normalized] = {
       name: displayName,
       email: displayEmail,
@@ -255,7 +241,8 @@ export function analyze(
   commits: Commit[],
   similarityThreshold: number,
   aliasResolver: ((n: string, name?: string, email?: string) => string) | null,
-  canonicalDetails?: Map<string, { name?: string; email?: string }>
+  canonicalDetails?: Map<string, { name?: string; email?: string }>,
+  groupBy: 'email' | 'name' = 'email'
 ) {
   const contribMap: Record<string, ContributorsMapEntry> = {};
   const fileToContributors: Record<string, Set<string>> = {};
@@ -269,8 +256,12 @@ export function analyze(
     totalCommits++;
     const name = commit.authorName || '';
     const email = commit.authorEmail || '';
-    const baseNorm = normalizeName(name || email);
-    const normalized = aliasResolver ? aliasResolver(baseNorm, name, email) : baseNorm;
+
+    const normalized = normalizeKey(
+      commit as { authorName?: string; authorEmail?: string },
+      groupBy,
+      aliasResolver
+    );
 
     const contrib = getOrCreateContributor(contribMap, normalized, name, email, canonicalDetails);
     contrib.commits += 1;

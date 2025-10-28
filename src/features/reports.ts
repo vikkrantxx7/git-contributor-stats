@@ -56,16 +56,20 @@ export async function generateReports(
 
   const topStatsMetrics = parseTopStatsMetrics(opts.topStats);
 
-  if (writeMDPath) {
+  const analysisData =
+    writeMDPath || writeHTMLPath
+      ? {
+          ...final,
+          topContributors: final.topContributors.map(toReportContributor),
+          busFactor: {
+            ...final.busFactor,
+            filesSingleOwner: final.busFactor.filesSingleOwner ?? []
+          }
+        }
+      : null;
+
+  if (writeMDPath && analysisData) {
     ensureDir(path.dirname(writeMDPath));
-    const analysisData = {
-      ...final,
-      topContributors: final.topContributors.map(toReportContributor),
-      busFactor: {
-        ...final.busFactor,
-        filesSingleOwner: final.busFactor.filesSingleOwner ?? []
-      }
-    };
     const md = generateMarkdownReport(analysisData, final.meta.repo, {
       includeTopStats: !!opts.topStats,
       topStatsMetrics
@@ -74,16 +78,8 @@ export async function generateReports(
     console.error(`Wrote Markdown report to ${writeMDPath}`);
   }
 
-  if (writeHTMLPath) {
+  if (writeHTMLPath && analysisData) {
     ensureDir(path.dirname(writeHTMLPath));
-    const analysisData = {
-      ...final,
-      topContributors: final.topContributors.map(toReportContributor),
-      busFactor: {
-        ...final.busFactor,
-        filesSingleOwner: final.busFactor.filesSingleOwner ?? []
-      }
-    };
     const html = generateHTMLReport(analysisData, final.meta.repo, {
       includeTopStats: !!opts.topStats,
       topStatsMetrics

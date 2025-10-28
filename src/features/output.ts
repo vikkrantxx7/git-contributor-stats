@@ -27,18 +27,19 @@ export function handleStdoutOutput(final: ContributorStatsResult, opts: OutputOp
     return;
   }
 
+  const csvContributors: ContributorBasic[] = final.topContributors.map((tc) => ({
+    key: tc.email ?? tc.name ?? '',
+    name: tc.name ?? '',
+    emails: tc.email ? [tc.email] : [],
+    commits: tc.commits,
+    additions: tc.added,
+    deletions: tc.deleted,
+    changes: tc.changes,
+    firstCommitDate: undefined,
+    lastCommitDate: undefined
+  }));
+
   if (stdoutWantsCSV) {
-    const csvContributors = final.basic.contributors.map((tc) => ({
-      key: tc.email ?? tc.name ?? '',
-      name: tc.name ?? '',
-      emails: tc.email ? [tc.email] : [],
-      commits: tc.commits,
-      additions: tc.added,
-      deletions: tc.deleted,
-      changes: tc.changes,
-      firstCommitDate: undefined,
-      lastCommitDate: undefined
-    }));
     printCSV(csvContributors, groupBy);
     return;
   }
@@ -60,18 +61,6 @@ export function handleStdoutOutput(final: ContributorStatsResult, opts: OutputOp
     }
     console.log('');
   }
-
-  const csvContributors: ContributorBasic[] = final.basic.contributors.map((tc) => ({
-    key: tc.email ?? tc.name ?? '',
-    name: tc.name ?? '',
-    emails: tc.email ? [tc.email] : [],
-    commits: tc.commits,
-    additions: tc.added,
-    deletions: tc.deleted,
-    changes: tc.changes,
-    firstCommitDate: undefined,
-    lastCommitDate: undefined
-  }));
 
   printTable(csvContributors, final.basic.meta, groupBy);
 }

@@ -1,4 +1,6 @@
 import { formatNumber } from '../utils/formatting.ts';
+import { normalizeContributorName } from '../utils/normalization.ts';
+import { calculateSimilarityScore } from '../utils/similarity.ts';
 
 export interface ContributorBasic {
   key: string;
@@ -31,11 +33,114 @@ type AggregationData = {
   lastCommitDate?: Date;
 };
 
-function extractKey(commit: Commit, groupBy: 'name' | 'email'): string {
-  if (groupBy === 'name') {
-    return (commit.authorName || '').trim() || '(unknown)';
+export interface AggregationOptions {
+  groupBy: 'name' | 'email';
+  aliasResolver?: ((n: string, name?: string, email?: string) => string) | null;
+  canonicalDetails?: Map<string, { name?: string; email?: string }>;
+  similarity?: number;
+}
+
+export function normalizeKey(
+  commit: Commit,
+  groupBy: 'name' | 'email',
+  aliasResolver?: ((n: string, name?: string, email?: string) => string) | null
+): string {
+  const name = commit.authorName || '';
+  const email = commit.authorEmail || '';
+  const valueToNormalize = groupBy === 'email' ? email || name : name || email;
+  const baseNorm = normalizeContributorName(valueToNormalize);
+  return aliasResolver ? aliasResolver(baseNorm, name, email) : baseNorm;
+}
+
+export function getDisplayDetails(
+  normalizedKey: string,
+  defaultName: string,
+  defaultEmail: string,
+  canonicalDetails?: Map<string, { name?: string; email?: string }>
+): { name: string; email: string } {
+  if (canonicalDetails?.has(normalizedKey)) {
+    const info = canonicalDetails.get(normalizedKey);
+    if (info) {
+      return {
+        name: info.name || defaultName,
+        email: info.email || defaultEmail
+      };
+    }
   }
-  return (commit.authorEmail || '').trim().toLowerCase() || '(unknown)';
+  return { name: defaultName, email: defaultEmail };
+}
+
+export function findSimilarKey(
+  norm: string,
+  existingKeys: string[],
+  threshold: number
+): string | null {
+  for (const mk of existingKeys) {
+    const sim = calculateSimilarityScore(norm, mk);
+    if (sim >= threshold) {
+      return mk;
+    }
+  }
+  return null;
+}
+
+function mergeEmails(target: Set<string>, source: Set<string>): void {
+  for (const email of source) {
+    target.add(email);
+  }
+}
+
+function mergeFirstCommitDate(target: AggregationData, source: AggregationData): void {
+  if (
+    source.firstCommitDate &&
+    (!target.firstCommitDate || source.firstCommitDate < target.firstCommitDate)
+  ) {
+    target.firstCommitDate = source.firstCommitDate;
+  }
+}
+
+function mergeLastCommitDate(target: AggregationData, source: AggregationData): void {
+  if (
+    source.lastCommitDate &&
+    (!target.lastCommitDate || source.lastCommitDate > target.lastCommitDate)
+  ) {
+    target.lastCommitDate = source.lastCommitDate;
+  }
+}
+
+function mergeAggregationData(target: AggregationData, source: AggregationData): void {
+  target.commits += source.commits;
+  target.additions += source.additions;
+  target.deletions += source.deletions;
+  mergeEmails(target.emails, source.emails);
+  mergeFirstCommitDate(target, source);
+  mergeLastCommitDate(target, source);
+}
+
+function applySimilarityMerging(
+  aggregations: AggregationData[],
+  threshold: number
+): AggregationData[] {
+  const merged: AggregationData[] = [];
+
+  for (const agg of aggregations) {
+    const similarKey = findSimilarKey(
+      agg.key,
+      merged.map((m) => m.key),
+      threshold
+    );
+
+    if (similarKey) {
+      const target = merged.find((m) => m.key === similarKey);
+      if (target) {
+        mergeAggregationData(target, agg);
+      }
+    } else {
+      merged.push(agg);
+    }
+  }
+
+  return merged;
 }
 
 function createInitialAggregation(commit: Commit, key: string): AggregationData {
@@ -93,14 +198,26 @@ function convertToContributor(agg: AggregationData, groupBy: 'name' | 'email'): 
   } as ContributorBasic;
 }
 
-export function aggregateBasic(commits: Commit[], groupBy: 'name' | 'email') {
+export function aggregateBasic(commits: Commit[], options: AggregationOptions): ContributorBasic[] {
+  const { groupBy, aliasResolver, canonicalDetails, similarity } = options;
   const map = new Map<string, AggregationData>();
 
   for (const commit of commits) {
-    const key = extractKey(commit, groupBy);
+    const key = normalizeKey(commit, groupBy, aliasResolver);
 
     if (!map.has(key)) {
-      map.set(key, createInitialAggregation(commit, key));
+      const { name, email } = getDisplayDetails(
+        key,
+        commit.authorName || '',
+        commit.authorEmail || '',
+        canonicalDetails
+      );
+      const agg = createInitialAggregation(commit, key);
+      agg.name = name || agg.name;
+      if (email) {
+        agg.emails.add(email.toLowerCase());
+      }
+      map.set(key, agg);
     }
 
     const agg = map.get(key);
@@ -109,7 +226,13 @@ export function aggregateBasic(commits: Commit[], groupBy: 'name' | 'email') {
     }
   }
 
-  return Array.from(map.values()).map((agg) => convertToContributor(agg, groupBy));
+  let aggregations = Array.from(map.values());
+
+  if (similarity !== undefined && similarity > 0) {
+    aggregations = applySimilarityMerging(aggregations, similarity);
+  }
+
+  return aggregations.map((agg) => convertToContributor(agg, groupBy));
 }
 
 export type SortItem = { commits: number; changes: number; additions?: number; deletions?: number };

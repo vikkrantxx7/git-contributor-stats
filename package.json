@@ -87,8 +87,7 @@
   "dependencies": {
     "chart.js": "4.5.1",
     "chartjs-node-canvas": "5.0.0",
-    "commander": "14.0.1",
-    "string-similarity-js": "2.1.4"
+    "commander": "14.0.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.7",

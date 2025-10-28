@@ -63,7 +63,6 @@ export interface ContributorStatsResult {
   heatmap: number[][];
   busFactor: BusFactorInfo;
   basic: {
-    contributors: TopContributor[];
     meta: ContributorsMeta;
     groupBy: 'email' | 'name';
   };
@@ -142,7 +141,14 @@ export async function getContributorStats(
   debug(`parsed commits: ${commits.length}`);
 
   const groupBy = (opts.groupBy || 'email').toLowerCase() === 'name' ? 'name' : 'email';
-  let contributorsBasic = aggregateBasic(commits, groupBy);
+  const similarityThreshold = opts.similarity ?? 0.85;
+
+  let contributorsBasic = aggregateBasic(commits, {
+    groupBy,
+    aliasResolver: aliasResolveFn,
+    canonicalDetails,
+    similarity: similarityThreshold
+  });
   const sorter = pickSortMetric(opts.sortBy || 'changes');
   contributorsBasic.sort(sorter);
   if (opts.top && Number.isFinite(opts.top) && opts.top > 0) {
@@ -150,7 +156,16 @@ export async function getContributorStats(
   }
   const meta: ContributorsMeta = computeMeta(contributorsBasic);
 
-  const analysis = analyze(commits, opts.similarity ?? 0.85, aliasResolveFn, canonicalDetails);
+  const analysis = analyze(commits, similarityThreshold, aliasResolveFn, canonicalDetails, groupBy);
+
+  let topContributors = analysis.topContributors;
+  if (opts.sortBy && opts.sortBy !== 'commits') {
+    const metricSorter = pickSortMetric(opts.sortBy);
+    topContributors = [...topContributors].sort(metricSorter);
+  }
+  if (opts.top && Number.isFinite(opts.top) && opts.top > 0) {
+    topContributors = topContributors.slice(0, opts.top);
+  }
 
   let totalLines = 0;
   if (opts.countLines !== false) {
@@ -172,7 +187,7 @@ export async function getContributorStats(
     totalCommits: analysis.totalCommits,
     totalLines,
     contributors: analysis.contributors,
-    topContributors: analysis.topContributors,
+    topContributors,
     topStats: analysis.topStats,
     commitFrequency: analysis.commitFrequency,
     heatmap: analysis.heatmap,
@@ -182,6 +197,6 @@ export async function getContributorStats(
       details: analysis.busFactor.details,
       filesSingleOwner: analysis.busFactor.filesSingleOwner
     },
-    basic: { contributors: analysis.topContributors, meta, groupBy }
+    basic: { meta, groupBy }
   };
 }
