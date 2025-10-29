@@ -28,7 +28,8 @@ export function setupCLI(pkg: PackageJson): Command {
       'Limit to commits by author (string or regex supported by git)'
     )
     .option('--include-merges', 'Include merge commits (excluded by default)', false)
-    .option('-g, --group-by <field>', 'Grouping key: email | name', 'email')
+    .option('-g, --group-by <field>', 'Grouping key: email | name (default: email)', 'email')
+    .option('-l, --label-by <field>', 'Display label: email | name (default: name)', 'name')
     .option(
       '-s, --sort-by <metric>',
       'Sort by: changes | commits | additions | deletions',

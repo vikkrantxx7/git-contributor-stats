@@ -297,11 +297,11 @@ export interface ContributorsMeta {
 export function printTable(
   contributors: ContributorBasic[],
   meta: ContributorsMeta,
-  groupBy: 'name' | 'email'
+  labelBy: 'name' | 'email' = 'name'
 ) {
   const headers = [
     '#',
-    groupBy === 'name' ? 'Author' : 'Email',
+    labelBy === 'name' ? 'Author' : 'Email',
     'Commits',
     '+Additions',
     '-Deletions',
@@ -311,7 +311,7 @@ export function printTable(
 
   for (let idx = 0; idx < contributors.length; idx++) {
     const c = contributors[idx];
-    const label = groupBy === 'name' ? c.name || '(unknown)' : c.key || '(unknown)';
+    const label = labelBy === 'name' ? c.name || '(unknown)' : c.key || '(unknown)';
     rows.push([
       String(idx + 1),
       label,
@@ -360,10 +360,10 @@ export function printTable(
   }
 }
 
-export function printCSV(contributors: ContributorBasic[], groupBy: 'name' | 'email') {
+export function printCSV(contributors: ContributorBasic[], labelBy: 'name' | 'email' = 'name') {
   const header = [
     'rank',
-    groupBy === 'name' ? 'author' : 'email',
+    labelBy === 'name' ? 'author' : 'email',
     'commits',
     'additions',
     'deletions',
@@ -373,7 +373,7 @@ export function printCSV(contributors: ContributorBasic[], groupBy: 'name' | 'em
 
   for (let i = 0; i < contributors.length; i++) {
     const c = contributors[i];
-    const label = groupBy === 'name' ? c.name || '' : c.key || '';
+    const label = labelBy === 'name' ? c.name || '' : c.key || '';
     console.log([i + 1, label, c.commits, c.additions, c.deletions, c.changes].join(','));
   }
 }

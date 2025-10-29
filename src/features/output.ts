@@ -14,13 +14,13 @@ export interface OutputOptions {
   json?: boolean;
   format?: string;
   topStats?: string;
-  groupBy?: 'email' | 'name';
+  labelBy?: 'email' | 'name';
 }
 
 export function handleStdoutOutput(final: ContributorStatsResult, opts: OutputOptions = {}): void {
   const stdoutWantsJSON = opts.json || String(opts.format || '').toLowerCase() === 'json';
   const stdoutWantsCSV = String(opts.format || '').toLowerCase() === 'csv';
-  const groupBy: 'email' | 'name' = final.basic?.groupBy || opts.groupBy || 'email';
+  const labelBy: 'email' | 'name' = final.basic?.labelBy || opts.labelBy || 'name';
 
   if (stdoutWantsJSON) {
     console.log(JSON.stringify(final, null, 2));
@@ -40,7 +40,7 @@ export function handleStdoutOutput(final: ContributorStatsResult, opts: OutputOp
   }));
 
   if (stdoutWantsCSV) {
-    printCSV(csvContributors, groupBy);
+    printCSV(csvContributors, labelBy);
     return;
   }
 
@@ -62,5 +62,5 @@ export function handleStdoutOutput(final: ContributorStatsResult, opts: OutputOp
     console.log('');
   }
 
-  printTable(csvContributors, final.basic.meta, groupBy);
+  printTable(csvContributors, final.basic.meta, labelBy);
 }

@@ -25,6 +25,7 @@ export interface ContributorStatsOptions {
   author?: string;
   includeMerges?: boolean;
   groupBy?: 'email' | 'name';
+  labelBy?: 'email' | 'name';
   sortBy?: 'changes' | 'commits' | 'additions' | 'deletions';
   top?: number;
   similarity?: number;
@@ -65,6 +66,7 @@ export interface ContributorStatsResult {
   basic: {
     meta: ContributorsMeta;
     groupBy: 'email' | 'name';
+    labelBy: 'email' | 'name';
   };
 }
 
@@ -141,6 +143,7 @@ export async function getContributorStats(
   debug(`parsed commits: ${commits.length}`);
 
   const groupBy = (opts.groupBy || 'email').toLowerCase() === 'name' ? 'name' : 'email';
+  const labelBy = opts.labelBy?.toLowerCase() === 'email' ? 'email' : 'name';
   const similarityThreshold = opts.similarity ?? 0.85;
 
   let contributorsBasic = aggregateBasic(commits, {
@@ -197,6 +200,6 @@ export async function getContributorStats(
       details: analysis.busFactor.details,
       filesSingleOwner: analysis.busFactor.filesSingleOwner
     },
-    basic: { meta, groupBy }
+    basic: { meta, groupBy, labelBy }
   };
 }

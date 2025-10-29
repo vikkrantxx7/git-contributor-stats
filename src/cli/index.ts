@@ -32,6 +32,7 @@ async function main(argv: string[]): Promise<void> {
     author: opts.author,
     includeMerges: !!opts.includeMerges,
     groupBy: opts.groupBy,
+    labelBy: opts.labelBy,
     sortBy: opts.sortBy,
     top: opts.top,
     similarity: opts.similarity,
@@ -61,7 +62,12 @@ async function main(argv: string[]): Promise<void> {
   }
 
   // Handle stdout output
-  handleStdoutOutput(final, opts);
+  handleStdoutOutput(final, {
+    json: opts.json,
+    format: opts.format,
+    topStats: opts.topStats,
+    labelBy: opts.labelBy
+  });
 }
 
 export { main };
