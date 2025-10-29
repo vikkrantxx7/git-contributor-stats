@@ -47,6 +47,7 @@ interface AnalysisData {
   busFactor: BusFactor;
   topStats?: TopStats;
   heatmap: number[][];
+  heatmapContributors?: Record<string, Record<string, number>>;
 }
 
 interface ReportOptions {
@@ -137,6 +138,37 @@ function getCSS(): string {
       border: 1px solid #e2e8f0; padding: 2px; 
     }
     .heatmap-table th { background: #f7fafc; font-weight: 600; }
+    .heatmap-table td { position: relative; transition: transform 0.2s; }
+    .heatmap-table td:hover { transform: scale(1.2); z-index: 10; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+    .heatmap-table td[data-tooltip]:not([data-tooltip=""]):hover { cursor: pointer; }
+    .heatmap-table td[data-tooltip]:not([data-tooltip=""]):hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      cursor: default;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2d3748;
+      color: white;
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: pre;
+      z-index: 1000;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      margin-bottom: 5px;
+    }
+    .heatmap-table td[data-tooltip]:not([data-tooltip=""]):hover::before {
+      content: '';
+      position: absolute;
+      cursor: pointer;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #2d3748;
+      margin-bottom: -5px;
+    }
     .top-stats { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
     .top-stats h2 { color: white; border-color: rgba(255,255,255,0.3); }
     .top-stat-item { margin: 0.5rem 0; font-size: 1.1rem; }
@@ -294,6 +326,7 @@ function getJavaScript(data: AnalysisData): string {
   return `
     const topContributors = ${JSON.stringify(data.topContributors.slice(0, 15))};
     const heatmap = ${JSON.stringify(data.heatmap)};
+    const heatmapContributors = ${JSON.stringify(data.heatmapContributors || {})};
     
     // Commits chart
     new Chart(document.getElementById('commitsChart'), {
@@ -324,17 +357,28 @@ function getJavaScript(data: AnalysisData): string {
     });
     
     // Heatmap
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const dayAbbr = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const max = Math.max(...heatmap.flat());
     let html = '<tr><th></th>' + Array.from({length:24}, (_, i) => '<th>' + i + '</th>').join('') + '</tr>';
     
     for (let day = 0; day < 7; day++) {
-      html += '<tr><th>' + days[day] + '</th>';
+      html += '<tr><th>' + dayAbbr[day] + '</th>';
       for (let hour = 0; hour < 24; hour++) {
         const val = heatmap[day][hour] || 0;
         const intensity = max ? (val / max) * 0.8 : 0;
         const color = 'rgba(66, 153, 225, ' + intensity + ')';
-        html += '<td style="background:' + color + '">' + (val || '') + '</td>';
+        
+        // Get top contributors for this time slot
+        const key = day + '-' + hour;
+        const contributors = heatmapContributors[key] || {};
+        const topContribs = Object.entries(contributors)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 3)
+          .map(([name, count]) => name + ' (' + count + ')')
+          .join('&#10;');
+
+          html += '<td style="background:' + color + '" data-tooltip="' + topContribs + '">' + (val || '') + '</td>';
+
       }
       html += '</tr>';
     }

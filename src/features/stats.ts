@@ -62,6 +62,7 @@ export interface ContributorStatsResult {
   topStats: TopStatsSummary;
   commitFrequency: CommitFrequencyBreakdown;
   heatmap: number[][];
+  heatmapContributors: Record<string, Record<string, number>>;
   busFactor: BusFactorInfo;
   basic: {
     meta: ContributorsMeta;
@@ -194,6 +195,7 @@ export async function getContributorStats(
     topStats: analysis.topStats,
     commitFrequency: analysis.commitFrequency,
     heatmap: analysis.heatmap,
+    heatmapContributors: analysis.heatmapContributors,
     busFactor: {
       busFactor: analysis.busFactor.busFactor ?? 0,
       candidates: analysis.busFactor.candidates ?? [],

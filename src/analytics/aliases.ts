@@ -119,7 +119,7 @@ function processMapEntries(
   regexList: Array<{ regex: RegExp; canonical: string }>
 ): void {
   for (const [alias, canonical] of mapEntries) {
-    const regex = typeof alias === 'string' ? parseRegexPattern(alias) : null;
+    const regex = parseRegexPattern(alias);
 
     if (regex) {
       regexList.push({ regex, canonical: normalizeContributorName(canonical) });
@@ -137,12 +137,10 @@ function processGroups(
   for (const g of groups) {
     if (!Array.isArray(g) || g.length === 0) continue;
 
-    const canonicalCandidate = g.find((s) => typeof s === 'string' && s.includes('@')) || g[0];
+    const canonicalCandidate = g.find((s) => s.includes('@')) || g[0];
     const canonicalNorm = normalizeContributorName(String(canonicalCandidate));
 
     for (const item of g) {
-      if (typeof item !== 'string') continue;
-
       const regex = parseRegexPattern(item);
       if (regex) {
         regexList.push({ regex, canonical: canonicalNorm });

@@ -128,7 +128,9 @@ function updateCommitFrequency(
   date: Date | null,
   commitFrequencyMonthly: Record<string, number>,
   commitFrequencyWeekly: Record<string, number>,
-  heatmap: number[][]
+  heatmap: number[][],
+  heatmapContributors: Record<string, Record<string, number>>,
+  contributorName: string
 ): void {
   if (!date) return;
 
@@ -138,7 +140,16 @@ function updateCommitFrequency(
   const weekKey = isoWeekKey(date);
   commitFrequencyWeekly[weekKey] = (commitFrequencyWeekly[weekKey] || 0) + 1;
 
-  heatmap[date.getDay()][date.getHours()] += 1;
+  const day = date.getDay();
+  const hour = date.getHours();
+  heatmap[day][hour] += 1;
+
+  // Track contributors for this time slot
+  const key = `${day}-${hour}`;
+  if (!heatmapContributors[key]) {
+    heatmapContributors[key] = {};
+  }
+  heatmapContributors[key][contributorName] = (heatmapContributors[key][contributorName] || 0) + 1;
 }
 
 function processCommitFiles(
@@ -251,6 +262,7 @@ export function analyze(
   const commitFrequencyMonthly: Record<string, number> = {};
   const commitFrequencyWeekly: Record<string, number> = {};
   const heatmap: number[][] = Array.from({ length: 7 }, () => Array.from({ length: 24 }, () => 0));
+  const heatmapContributors: Record<string, Record<string, number>> = {};
 
   for (const commit of commits) {
     totalCommits++;
@@ -266,8 +278,15 @@ export function analyze(
     const contrib = getOrCreateContributor(contribMap, normalized, name, email, canonicalDetails);
     contrib.commits += 1;
 
-    const d = commit.date ? new Date(commit.date) : null;
-    updateCommitFrequency(d, commitFrequencyMonthly, commitFrequencyWeekly, heatmap);
+    const date = commit.date ? new Date(commit.date) : null;
+    updateCommitFrequency(
+      date,
+      commitFrequencyMonthly,
+      commitFrequencyWeekly,
+      heatmap,
+      heatmapContributors,
+      name
+    );
     processCommitFiles(commit, contrib, fileToContributors, normalized);
   }
 
@@ -290,6 +309,7 @@ export function analyze(
     totalCommits,
     commitFrequency: { monthly: commitFrequencyMonthly, weekly: commitFrequencyWeekly },
     heatmap,
+    heatmapContributors,
     busFactor: busFactorInfo,
     topStats
   } as const;
