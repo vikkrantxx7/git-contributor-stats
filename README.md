@@ -90,16 +90,11 @@ npm install -g git-contributor-stats
 npm install git-contributor-stats
 ```
 
-### Development
-
-```bash
-git clone https://github.com/vikkrantxx7/git-contributor-stats.git
-cd git-contributor-stats
-npm install
-npm run build
-```
-import { getContributorStats } from 'git-contributor-stats/stats';
 ## Quick Start
+
+> 💡 **New to this tool?** Check out:
+> - [**Critical Use Cases**](./CRITICAL-USE-CASES.md) - Top 5 real-world scenarios for your repo
+> - [**Quick Reference**](./QUICK-REFERENCE.md) - One-line commands & cheat sheet
 
 ### CLI - Basic Usage
 
@@ -445,6 +440,7 @@ interface ContributorStatsOptions {
   
   // Grouping & sorting
   groupBy?: 'email' | 'name';       // Group by field (default: 'email')
+  labelBy?: 'email' | 'name';       // Display label (default: 'name')
   sortBy?: 'changes' | 'commits' | 'additions' | 'deletions';
   top?: number;                     // Limit to top N contributors
   
@@ -455,9 +451,7 @@ interface ContributorStatsOptions {
   
   // Performance
   countLines?: boolean;            // Count total LOC (default: true)
-  
-  // Report customization
-  includeTopStats?: boolean;       // Include top stats (default: true)
+  verbose?: boolean;               // Enable verbose logging (default: false)
 }
 ```
 
@@ -515,7 +509,7 @@ interface ContributorStatsResult {
 #### Analyze Specific Time Period
 
 ```javascript
-import { getContributorStats } from 'git-contributor-stats';
+import { getContributorStats } from 'git-contributor-stats/stats';
 
 const stats = await getContributorStats({
   repo: '/path/to/repo',
@@ -550,7 +544,7 @@ console.log(`- Files changed: ${Object.keys(stats.topContributors[0]?.files || {
 
 ```javascript
 import { getContributorStats } from 'git-contributor-stats/stats';
-import { generateOutputs } from 'git-contributor-stats/reports';
+import { generateReports } from 'git-contributor-stats/reports';
 
 const stats = await getContributorStats({
   repo: '.',
@@ -559,7 +553,7 @@ const stats = await getContributorStats({
 });
 
 // Generate reports
-await generateOutputs(stats, {
+await generateReports(stats, {
   outDir: 'reports',
   md: 'reports/quarterly-report.md',
   html: 'reports/quarterly-report.html',
@@ -582,18 +576,21 @@ const stats = await getContributorStats({
 
 // Generate SVG charts
 await generateCharts(stats, {
+  charts: true,
   chartsDir: 'output/charts',
   chartFormat: 'svg'
 });
 
 // Or PNG charts
 await generateCharts(stats, {
+  charts: true,
   chartsDir: 'output/charts',
   chartFormat: 'png'
 });
 
 // Or both
 await generateCharts(stats, {
+  charts: true,
   chartsDir: 'output/charts',
   chartFormat: 'both'
 });
@@ -612,13 +609,13 @@ const stats = await getContributorStats({
       ['john@example.com', 'john.smith@example.com']
     ],
     canonical: {
-      'jane.doe@example.com': {
+      'jane@example.com': {
         name: 'Jane Doe',
-        email: 'jane.doe@example.com'
+        email: 'jane@example.com'
       },
-      'john.smith@example.com': {
+      'john@example.com': {
         name: 'John Smith',
-        email: 'john.smith@example.com'
+        email: 'john@example.com'
       }
     }
   },
@@ -697,22 +694,26 @@ export async function getContributorStats(
 ): Promise<ContributorStatsResult>
 
 // From 'git-contributor-stats/reports'
-export async function generateOutputs(
+export async function generateReports(
   stats: ContributorStatsResult,
-  options?: ContributorStatsOptions
+  options?: ReportOptions
 ): Promise<void>
 
 // From 'git-contributor-stats/charts'
 export async function generateCharts(
   stats: ContributorStatsResult,
-  options?: ContributorStatsOptions
+  options?: ChartOptions,
+  outDir?: string
 ): Promise<void>
+
+// From 'git-contributor-stats/output'
+export function handleStdoutOutput(
+  stats: ContributorStatsResult,
+  options?: OutputOptions
+): void
 
 // From 'git-contributor-stats/workflow'
 export async function generateWorkflow(repo: string): Promise<void>
-
-// Utility functions available from various subpaths
-export { parseDateInput, analyze, buildAliasResolver }
 ```
 
 ## Identity Management
@@ -958,14 +959,16 @@ async function checkRepoHealth() {
   }
 }
 
-checkRepoHealth();
+import { generateReports } from 'git-contributor-stats/reports';
+import { generateCharts } from 'git-contributor-stats/charts';
 ```
 
 #### Generate Custom Dashboard
 
 ```javascript
 import { getContributorStats } from 'git-contributor-stats/stats';
-import { generateOutputs } from 'git-contributor-stats/reports';
+import { generateReports } from 'git-contributor-stats/reports';
+import { generateCharts } from 'git-contributor-stats/charts';
 
 async function generateDashboard() {
   const [weekly, monthly, quarterly] = await Promise.all([
@@ -974,24 +977,30 @@ async function generateDashboard() {
     getContributorStats({ since: '90.days' })
   ]);
   
-  await generateOutputs(weekly, {
+  await generateReports(weekly, {
     outDir: 'dashboard/weekly',
-    md: true,
-    html: true
+    md: 'dashboard/weekly/report.md',
+    html: 'dashboard/weekly/report.html'
   });
   
-  await generateOutputs(monthly, {
+  await generateReports(monthly, {
     outDir: 'dashboard/monthly',
-    md: true,
-    html: true,
-    charts: true
+    md: 'dashboard/monthly/report.md',
+    html: 'dashboard/monthly/report.html'
+  });
+  await generateCharts(monthly, {
+    charts: true,
+    chartsDir: 'dashboard/monthly/charts'
   });
   
-  await generateOutputs(quarterly, {
+  await generateReports(quarterly, {
     outDir: 'dashboard/quarterly',
-    md: true,
-    html: true,
+    md: 'dashboard/quarterly/report.md',
+    html: 'dashboard/quarterly/report.html'
+  });
+  await generateCharts(quarterly, {
     charts: true,
+    chartsDir: 'dashboard/quarterly/charts',
     chartFormat: 'both'
   });
   
@@ -1181,8 +1190,22 @@ git-contributor-stats/
 └── vitest.config.ts
 ```
 
-### Tree-Shaking & Modularization
+- `git-contributor-stats/charts` - Chart generation with Chart.js (~260KB with charts)
+- `git-contributor-stats/reports` - Report generation: CSV, Markdown, HTML (~200KB)
+- `git-contributor-stats/output` - Console output formatting (table, JSON, CSV)
+- `git-contributor-stats/workflow` - GitHub Actions workflow generator (~5KB)
+- `git-contributor-stats/cli` - CLI entry point (combines all features)
 
+**Bundle Size Comparison:**
+
+| Import | Bundle Size | Reduction |
+|---------|---------|-------------|
+| Core stats only | ~80KB | 84% smaller |
+| Stats + Reports | ~200KB | 60% smaller |
+| Stats + Charts | ~260KB | 48% smaller |
+| Full features (CLI) | ~400KB | 20% smaller |
+
+*Compared to the previous monolithic bundle of ~500KB*
 This package is designed for optimal tree-shaking and minimal bundle sizes:
 
 - **Subpath Exports Only**: All features must be imported from their specific subpaths
@@ -1224,7 +1247,7 @@ npm test -- --coverage
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
-4. Run tests and linter (`npm test && npm run biome`)
+4. Run tests and linter (`npm test && npm run lint`)
 5. Commit your changes (`git commit -m 'Add amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
@@ -1283,28 +1306,11 @@ jobs:
 
 MIT License - see [LICENSE](LICENSE) file for details.
 
-## Author
-
-**Vikrant Sharma**
-- Email: vikkrant.xx7@gmail.com
-- GitHub: [@vikkrantxx7](https://github.com/vikkrantxx7)
-
 ## Links
 
 - [npm Package](https://www.npmjs.com/package/git-contributor-stats)
 - [GitHub Repository](https://github.com/vikkrantxx7/git-contributor-stats)
 - [Issue Tracker](https://github.com/vikkrantxx7/git-contributor-stats/issues)
-
-## Changelog
-
-### Recent Updates
-
-- **Code Quality Improvements**: Reduced cognitive complexity across parser, markdown, and formatting modules
-- **Top-level await**: Modernized CLI entry point
-- **Better error handling**: Improved type safety (removed `any` types)
-- **Code deduplication**: Shared utilities between markdown and formatting modules
-- **Performance**: Replaced `.forEach()` with `for...of` loops
-- **Cleaner code**: Extracted nested ternaries into clear helper functions
 
 ---
 

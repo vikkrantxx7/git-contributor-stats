@@ -43,20 +43,24 @@ await generateCharts(stats, { charts: true, chartFormat: 'svg' });
 
 **Total: ~260KB**
 
-## Example 3: Full Package (Backwards Compatible)
+## Example 3: Full Package Import
+
+**Note:** Version 2.0.0+ does not have a default barrel export. Import features separately:
 
 ```typescript
-import {
-  getContributorStats,
-  generateOutputs,
-  generateWorkflow
-} from 'git-contributor-stats';
+import { getContributorStats } from 'git-contributor-stats/stats';
+import { generateReports } from 'git-contributor-stats/reports';
+import { generateCharts } from 'git-contributor-stats/charts';
+import { generateWorkflow } from 'git-contributor-stats/workflow';
 
 const stats = await getContributorStats({ repo: '.' });
-await generateOutputs(stats, {
+await generateReports(stats, {
   outDir: './reports',
-  charts: true,
   html: './reports/report.html'
+});
+await generateCharts(stats, {
+  charts: true,
+  chartsDir: './reports/charts'
 });
 await generateWorkflow('.');
 ```
@@ -65,7 +69,7 @@ await generateWorkflow('.');
 - ✅ All feature modules
 - ✅ All shared chunks
 
-**Total: ~400KB** (still 20% smaller due to better code splitting)
+**Total: ~400KB** (20% smaller than v1.x due to better code splitting)
 
 ## Verification
 
