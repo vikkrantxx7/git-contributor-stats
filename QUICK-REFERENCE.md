@@ -1,223 +1,246 @@
-# Quick Reference Card - git-contributor-stats
+# Quick Reference - git-contributor-stats
 
-## 🎯 One-Line Commands for Common Tasks
+> One-page command cheat sheet for daily use
 
-### 1️⃣ Quick Health Check
+## Installation
+
 ```bash
-git-contributor-stats --since 90.days --json | jq '.busFactor'
+# Global CLI
+npm install -g git-contributor-stats
+
+# Local project
+npm install git-contributor-stats
 ```
 
-### 2️⃣ Generate Full Report (Most Popular)
+---
+
+## Most Common Commands
+
+### 1. Quick Analysis (Console)
+```bash
+git-contributor-stats --since 90.days
+```
+
+### 2. Full Dashboard (Most Popular!)
 ```bash
 git-contributor-stats --since 90.days --out-dir reports --md --html --charts
 ```
 
-### 3️⃣ Weekly Team Update
+### 3. Fast Analysis (Large Repos)
 ```bash
-git-contributor-stats --since 7.days --md weekly-report.md --charts
+git-contributor-stats --no-count-lines --since 6.months --top 20
 ```
 
-### 4️⃣ Release Comparison
+### 4. Weekly Report
 ```bash
-git-contributor-stats --branch v1.0.0..v2.0.0 --json > release-diff.json
+git-contributor-stats --since 7.days --md weekly-report.md
 ```
 
-### 5️⃣ Fast Analysis (Large Repos)
+### 5. Release Comparison
 ```bash
-git-contributor-stats --since 6.months --no-count-lines --top 20
+git-contributor-stats --branch v1.0.0..v2.0.0 --json > release.json
 ```
 
-### 6️⃣ Specific Directory Analysis
+### 6. Health Check
 ```bash
-git-contributor-stats src/backend/ --since 1.year --md backend-team.md
+git-contributor-stats --since 90.days --json | jq '.busFactor'
 ```
 
-### 7️⃣ Activity Patterns
+### 7. Specific Directory
 ```bash
-git-contributor-stats --since 6.months --json | jq '.heatmap'
+git-contributor-stats src/ --since 1.year --md backend-team.md
 ```
 
-### 8️⃣ Top 10 Contributors This Month
+### 8. Activity Patterns
 ```bash
-git-contributor-stats --since 30.days --top 10 --format table
-```
-
----
-
-## 📊 Output Formats Quick Guide
-
-| Format | Option | Best For |
-|--------|--------|----------|
-| **Table** | `--format table` | Console viewing (default) |
-| **JSON** | `--json` | API integration, custom processing |
-| **CSV** | `--csv stats.csv` | Excel, Google Sheets |
-| **Markdown** | `--md report.md` | GitHub wikis, documentation |
-| **HTML** | `--html dashboard.html` | Stakeholder presentations |
-| **Charts** | `--charts` | Visual analysis (SVG/PNG) |
-
----
-
-## 🎨 Common Filtering Patterns
-
-```bash
-# Last 90 days
---since 90.days
-
-# Specific date range
---since 2024-01-01 --until 2024-12-31
-
-# Specific branch
---branch main
-
-# Compare branches
---branch main..feature-xyz
-
-# Specific author
---author "jane@example.com"
-
-# Specific paths
-src/ lib/ tests/
-
-# Exclude line counting (faster)
---no-count-lines
-
-# Top N contributors
---top 10
+git-contributor-stats --since 6.months --charts
 ```
 
 ---
 
-## 🔥 Most Useful Combinations
+## Output Formats
 
-### Quarterly Business Review
+| Format | Option | Output |
+|--------|--------|--------|
+| Table | `--format table` | Console (default) |
+| JSON | `--json` | Comprehensive JSON |
+| CSV | `--csv file.csv` | Spreadsheet-ready |
+| Markdown | `--md file.md` | Documentation |
+| HTML | `--html file.html` | Dashboard |
+| Charts | `--charts` | SVG/PNG visualizations |
+
+---
+
+## Common Options
+
+### Time Filtering
 ```bash
+--since 90.days              # Last quarter
+--since 30.days              # Last month
+--since 7.days               # Last week
+--since 2024-01-01           # From specific date
+--until 2024-12-31           # Until specific date
+```
+
+### Branch/Range
+```bash
+--branch main                # Specific branch
+--branch main..feature       # Compare branches
+--branch v1.0..v2.0          # Compare tags
+```
+
+### Author & Path
+```bash
+--author "jane@example.com"  # Filter by author
+src/                         # Specific directory
+src/ lib/ tests/             # Multiple paths
+```
+
+### Sorting & Limiting
+```bash
+--sort-by commits            # Sort by commits
+--sort-by additions          # Sort by additions
+--sort-by net                # Sort by net lines
+--top 10                     # Limit to top N
+```
+
+### Performance
+```bash
+--no-count-lines             # Skip LOC counting (5x faster)
+```
+
+### Identity
+```bash
+--alias-file aliases.json    # Merge duplicate identities
+--similarity 0.9             # Name merge threshold
+```
+
+---
+
+## Output Combinations
+
+### Console + File
+```bash
+# JSON to stdout AND file reports
+git-contributor-stats --json --md report.md --html dashboard.html
+```
+
+### All Formats
+```bash
+# Generate everything
 git-contributor-stats \
-  --since 90.days \
-  --out-dir reports/Q4-2024 \
-  --md --html --csv \
-  --charts --chart-format both \
-  --no-count-lines
-```
-
-### Sprint Retrospective
-```bash
-git-contributor-stats \
-  --since 14.days \
-  --md sprint-21-report.md \
+  --out-dir reports \
+  --md reports/report.md \
+  --html reports/dashboard.html \
+  --csv reports/contributors.csv \
   --charts \
-  --top-stats commits,net
-```
-
-### Team Health Check
-```bash
-git-contributor-stats \
-  --since 90.days \
-  --json | jq '{
-    active_devs: .topContributors | length,
-    total_commits: .totalCommits,
-    bus_factor_risk: .busFactor.filesSingleOwner | length
-  }'
-```
-
-### Release Notes Data
-```bash
-git-contributor-stats \
-  --branch v2.0.0..v3.0.0 \
-  --format csv > v3-contributors.csv
+  --chart-format both
 ```
 
 ---
 
-## 💾 Save These Aliases (Optional)
+## Programmatic API
 
-Add to your `~/.zshrc` or `~/.bashrc`:
-
-```bash
-# Weekly stats
-alias stats-weekly='git-contributor-stats --since 7.days --md weekly-report.md'
-
-# Monthly dashboard
-alias stats-monthly='git-contributor-stats --since 30.days --out-dir reports/monthly --md --html --charts'
-
-# Quick check
-alias stats-quick='git-contributor-stats --since 90.days --no-count-lines --top 10'
-
-# Health check
-alias stats-health='git-contributor-stats --since 90.days --json | jq "{contributors: .topContributors | length, bus_factor: .busFactor.filesSingleOwner | length}"'
-```
-
----
-
-## 🚀 Programmatic API Quick Start
-
+### Core Stats
 ```javascript
-// Simple analysis
 import { getContributorStats } from 'git-contributor-stats/stats';
 
 const stats = await getContributorStats({
+  repo: '.',
   since: '90.days',
   countLines: false
 });
-
-console.log(`Total commits: ${stats.totalCommits}`);
-console.log(`Contributors: ${stats.topContributors.length}`);
 ```
 
+### Generate Reports
 ```javascript
-// Full dashboard
-import { getContributorStats } from 'git-contributor-stats/stats';
 import { generateReports } from 'git-contributor-stats/reports';
+
+await generateReports(stats, {
+  outDir: 'reports',
+  md: 'reports/report.md',
+  html: 'reports/dashboard.html',
+  csv: 'reports/contributors.csv'
+});
+```
+
+### Generate Charts
+```javascript
 import { generateCharts } from 'git-contributor-stats/charts';
 
-const stats = await getContributorStats({ since: '90.days' });
-await generateReports(stats, { outDir: 'reports', md: true, html: true });
-await generateCharts(stats, { charts: true, chartsDir: 'reports/charts' });
+await generateCharts(stats, {
+  charts: true,
+  chartsDir: 'reports/charts',
+  chartFormat: 'svg'  // or 'png' or 'both'
+});
 ```
 
 ---
 
-## 📋 Checklist: First Time Setup
+## Bash Aliases (Optional)
 
-- [ ] Install: `npm install -g git-contributor-stats`
-- [ ] Test run: `git-contributor-stats --since 30.days`
-- [ ] Create aliases (optional): Add identity mapping file
-- [ ] Generate first report: `git-contributor-stats --since 90.days --out-dir reports --md --html --charts`
-- [ ] Set up automation (optional): `git-contributor-stats --generate-workflow`
+Add to `~/.zshrc` or `~/.bashrc`:
 
----
+```bash
+# Quick stats
+alias gcs='git-contributor-stats'
 
-## 🎯 Decision Tree
+# Weekly report
+alias gcs-weekly='git-contributor-stats --since 7.days --md weekly-report.md'
 
-```
-What do you need?
-│
-├─ Quick console view → git-contributor-stats --since 90.days
-│
-├─ Detailed report → git-contributor-stats --since 90.days --out-dir reports --md --html --charts
-│
-├─ Raw data for analysis → git-contributor-stats --json > data.json
-│
-├─ Compare releases → git-contributor-stats --branch v1.0..v2.0 --json
-│
-├─ Team health metrics → git-contributor-stats --since 90.days --json | jq '.busFactor'
-│
-└─ Automated reporting → git-contributor-stats --generate-workflow
+# Monthly dashboard
+alias gcs-monthly='git-contributor-stats --since 30.days --out-dir reports --md --html --charts'
+
+# Quick health check
+alias gcs-health='git-contributor-stats --since 90.days --json | jq "{contributors: .topContributors | length, bus_factor: .busFactor.filesSingleOwner | length}"'
+
+# Fast analysis
+alias gcs-fast='git-contributor-stats --no-count-lines --since 90.days --top 20'
 ```
 
 ---
 
-## ⚡ Performance Tips
+## Performance Tips
 
-| Repo Size | Recommended Options |
+| Repo Size | Recommended Command |
 |-----------|---------------------|
 | Small (<1k commits) | All features enabled |
 | Medium (1k-10k) | `--no-count-lines` |
-| Large (10k+) | `--no-count-lines --since 6.months` |
-| Huge (100k+) | `--no-count-lines --since 90.days --top 20` |
+| Large (10k-50k) | `--no-count-lines --since 6.months` |
+| Huge (50k+) | `--no-count-lines --since 90.days --top 20` |
 
 ---
 
-**Print this card and keep it handy! 📌**
+## Quick Troubleshooting
 
-For detailed use cases, see: [CRITICAL-USE-CASES.md](./CRITICAL-USE-CASES.md)
+| Issue | Solution |
+|-------|----------|
+| Too slow | Add `--no-count-lines` |
+| Too many contributors | Add `--top 20` |
+| Duplicate names | Use `--alias-file` |
+| Need specific period | Use `--since` and `--until` |
+| Large output | Filter with `--top` or paths |
+
+---
+
+## GitHub Actions
+
+Generate workflow:
+```bash
+git-contributor-stats --generate-workflow
+```
+
+Creates `.github/workflows/git-contributor-stats.yml` for automated reports.
+
+---
+
+## More Information
+
+- **Usage examples**: [QUICK-START.md](./QUICK-START.md)
+- **Complete docs**: [README.md](./README.md)
+- **Architecture**: [TECHNICAL.md](./TECHNICAL.md)
+
+---
+
+**Print this and keep it handy! 📋**
 

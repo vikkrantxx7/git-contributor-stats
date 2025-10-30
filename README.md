@@ -16,7 +16,7 @@ A powerful, fast Node.js CLI and library to analyze Git repository contributions
 > - `git-contributor-stats/output` - Console output
 > - `git-contributor-stats/workflow` - GitHub Actions workflow
 > 
-> See [Tree-Shaking Guide](./TREE-SHAKING-GUIDE.md) and [Refactoring Summary](./REFACTORING-SUMMARY.md) for details.
+> See [TECHNICAL.md](./TECHNICAL.md) for architecture details and [QUICK-START.md](./QUICK-START.md) for usage examples.
 
 ---
 
@@ -92,9 +92,7 @@ npm install git-contributor-stats
 
 ## Quick Start
 
-> 💡 **New to this tool?** Check out:
-> - [**Critical Use Cases**](./CRITICAL-USE-CASES.md) - Top 5 real-world scenarios for your repo
-> - [**Quick Reference**](./QUICK-REFERENCE.md) - One-line commands & cheat sheet
+> 💡 **New to this tool?** See [**QUICK-START.md**](./QUICK-START.md) for detailed use cases and examples
 
 ### CLI - Basic Usage
 
@@ -108,7 +106,7 @@ git-contributor-stats --top 10
 # Last 90 days with JSON output
 git-contributor-stats --since 90.days --json
 
-# Generate all reports and charts
+# Generate all reports and charts (most popular!)
 git-contributor-stats --out-dir reports --md --html --charts
 
 # Specific folder analysis
@@ -1206,25 +1204,8 @@ git-contributor-stats/
 | Full features (CLI) | ~400KB | 20% smaller |
 
 *Compared to the previous monolithic bundle of ~500KB*
-This package is designed for optimal tree-shaking and minimal bundle sizes:
 
-- **Subpath Exports Only**: All features must be imported from their specific subpaths
-- **No Barrel Export**: There is no default export from the package root
-- **Feature Isolation**: Each feature module is independently tree-shakeable
-- **Shared Chunks**: Common code is automatically split into shared chunks during build
-- **Bundle Size Reduction**: Import only what you need - see bundle size comparisons in [Tree-Shaking Guide](./TREE-SHAKING-GUIDE.md)
-
-**Available Subpaths:**
-- `git-contributor-stats/stats` - Core statistics generation (~80KB when used alone)
-- `git-contributor-stats/charts` - Chart generation with Chart.js
-- `git-contributor-stats/reports` - Report generation (CSV, Markdown, HTML)
-- `git-contributor-stats/output` - Console output formatting
-- `git-contributor-stats/workflow` - GitHub Actions workflow generator
-
-For detailed information about the refactoring and architecture decisions, see:
-- [Refactoring Summary](./REFACTORING-SUMMARY.md) - Overview of changes and benefits
-- [Tree-Shaking Guide](./TREE-SHAKING-GUIDE.md) - Bundle size examples and verification
-- [Refactoring Checklist](./REFACTORING-CHECKLIST.md) - Complete task list and results
+*See [TECHNICAL.md](./TECHNICAL.md) for architecture details, tree-shaking verification, and migration guide*
 
 ### Testing
 
