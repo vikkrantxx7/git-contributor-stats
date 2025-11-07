@@ -1229,9 +1229,11 @@ npm test -- --coverage
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
 4. Run tests and linter (`npm test && npm run lint`)
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
+5. Commit your changes following [conventional commits](./COMMIT-GUIDELINES.md) (`git commit -m 'feat: add amazing feature'`)
 6. Push to the branch (`git push origin feature/amazing-feature`)
 7. Open a Pull Request
+
+> 📝 This project uses [Conventional Commits](./COMMIT-GUIDELINES.md). Commit messages are automatically validated.
 
 ## GitHub Actions Integration
 

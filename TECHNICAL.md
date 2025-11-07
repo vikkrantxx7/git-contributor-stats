@@ -456,9 +456,11 @@ npm run biome && npm run format && npm run typeCheck && npm test
 2. Create feature branch: `git checkout -b feature/amazing-feature`
 3. Make your changes
 4. Run tests and linter: `npm test && npm run biome`
-5. Commit: `git commit -m 'Add amazing feature'`
+5. Commit following [conventional commits](./COMMIT-GUIDELINES.md): `git commit -m 'feat: add amazing feature'`
 6. Push: `git push origin feature/amazing-feature`
 7. Open Pull Request
+
+> 📝 **Important:** This project uses [Conventional Commits](./COMMIT-GUIDELINES.md). Your commit messages will be automatically validated by commitlint.
 
 ### Release Process
 
@@ -468,8 +470,8 @@ npm run biome && npm run format && npm run typeCheck && npm test
 # 3. Run prepublish checks
 npm run prepublishOnly
 
-# 4. Commit and tag
-git commit -am "Release v2.1.0"
+# 4. Commit and tag (using conventional commits)
+git commit -am "chore(release): bump version to v2.1.0"
 git tag v2.1.0
 git push && git push --tags
 

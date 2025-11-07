@@ -32,6 +32,11 @@ Welcome to git-contributor-stats documentation!
    - Version 2.0 refactoring
    - Development guide
 
+5. **[COMMIT-GUIDELINES.md](./COMMIT-GUIDELINES.md)** - Commit message standards
+   - Conventional commits format
+   - Commit types and examples
+   - Automated validation with commitlint
+
 ---
 
 ## 🚀 Where to Start?

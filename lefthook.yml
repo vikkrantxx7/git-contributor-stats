@@ -1,0 +1,23 @@
+# Lefthook configuration for Git hooks
+# https://github.com/evilmartians/lefthook
+
+commit-msg:
+  commands:
+    commitlint:
+      run: npx commitlint --edit {1}
+
+pre-commit:
+  parallel: true
+  jobs:
+    - name: "🧹 Lint staged files"
+      glob: "*.{ts,js,json}"
+      exclude: "dist/,reports/"
+      run: npx biome lint {staged_files} --fix
+    - name: "🛡️ Type checking"
+      glob: "*.{ts}"
+      exclude: "dist/,reports/"
+      run: npx tsc --noEmit
+    - name: "🎨 Format staged files"
+      glob: "*.{ts,js,json}"
+      exclude: "dist/,reports/"
+      run: npx biome check {staged_files} --fix --linter-enabled=false
