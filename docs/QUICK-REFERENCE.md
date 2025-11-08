@@ -238,7 +238,7 @@ Creates `.github/workflows/git-contributor-stats.yml` for automated reports.
 
 - **Usage examples**: [QUICK-START.md](./QUICK-START.md)
 - **Complete docs**: [README.md](./README.md)
-- **Architecture**: [TECHNICAL.md](./TECHNICAL.md)
+- **Architecture**: [TECHNICAL.md](./technical/TECHNICAL.md)
 
 ---
 

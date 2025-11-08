@@ -1,0 +1,46 @@
+name: Changeset Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+jobs:
+  changeset-check:
+    name: Check for Changeset
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Check for Changeset
+        # Skip this check if PR has 'no-changeset' label or title contains [skip-changeset]
+        if: |
+          !contains(github.event.pull_request.labels.*.name, 'no-changeset') &&
+          !contains(github.event.pull_request.title, '[skip-changeset]')
+        run: |
+          if [ -z "$(ls -A .changeset/*.md 2>/dev/null | grep -v README)" ]; then
+            echo "❌ No changeset found!"
+            echo ""
+            echo "Please run 'npx changeset' to create a changeset file."
+            echo "This describes what changes you've made and helps with versioning."
+            echo ""
+            echo "If this PR doesn't need a changeset (e.g., docs only):"
+            echo "  - Add 'no-changeset' label, OR"
+            echo "  - Add '[skip-changeset]' to PR title"
+            exit 1
+          else
+            echo "✅ Changeset found!"
+            ls -la .changeset/*.md | grep -v README
+          fi
+

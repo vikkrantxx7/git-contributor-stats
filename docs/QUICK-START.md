@@ -350,7 +350,7 @@ This creates `.github/workflows/git-contributor-stats.yml` for automatic weekly 
 
 1. ✅ Read full documentation: [README.md](./README.md)
 2. ✅ Check command reference: [QUICK-REFERENCE.md](./QUICK-REFERENCE.md)
-3. ✅ Learn about architecture: [TECHNICAL.md](./TECHNICAL.md)
+3. ✅ Learn about architecture: [TECHNICAL.md](./technical/TECHNICAL.md)
 4. ✅ Try the commands above on your repo!
 
 ---

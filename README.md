@@ -16,7 +16,7 @@ A powerful, fast Node.js CLI and library to analyze Git repository contributions
 > - `git-contributor-stats/output` - Console output
 > - `git-contributor-stats/workflow` - GitHub Actions workflow
 > 
-> See [TECHNICAL.md](./TECHNICAL.md) for architecture details and [QUICK-START.md](./QUICK-START.md) for usage examples.
+> See [Technical Docs](./docs/technical/TECHNICAL.md) for architecture details and [Quick Start](./docs/QUICK-START.md) for usage examples.
 
 ---
 
@@ -43,7 +43,8 @@ Analyze your Git repository to gain insights into contributor activity, code own
 - [Examples](#examples)
 - [Output Reference](#output-reference)
 - [Performance Tips](#performance-tips)
-- [Development](#development)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
 - [License](#license)
 
 ## Features
@@ -92,7 +93,7 @@ npm install git-contributor-stats
 
 ## Quick Start
 
-> 💡 **New to this tool?** See [**QUICK-START.md**](./QUICK-START.md) for detailed use cases and examples
+> 💡 **New to this tool?** See [**Quick Start Guide**](./docs/QUICK-START.md) for detailed use cases and examples
 
 ### CLI - Basic Usage
 
@@ -1205,7 +1206,7 @@ git-contributor-stats/
 
 *Compared to the previous monolithic bundle of ~500KB*
 
-*See [TECHNICAL.md](./TECHNICAL.md) for architecture details, tree-shaking verification, and migration guide*
+*See [Technical Documentation](./docs/technical/TECHNICAL.md) for architecture details, tree-shaking verification, and migration guide*
 
 ### Testing
 
@@ -1223,17 +1224,34 @@ npm test -- --watch
 npm test -- --coverage
 ```
 
-### Contributing
+## Documentation
+
+📚 **Complete documentation is available in the [`docs/`](./docs/) directory:**
+
+- **[Quick Start Guide](./docs/QUICK-START.md)** - Get started in 30 seconds with common use cases
+- **[Quick Reference](./docs/QUICK-REFERENCE.md)** - Command cheat sheet for quick lookup
+- **[Contributing Guide](./docs/contributing/CONTRIBUTING.md)** - How to contribute to this project
+- **[Commit Guidelines](./docs/contributing/COMMIT-GUIDELINES.md)** - Conventional commits format
+- **[Release Workflow](./docs/contributing/RELEASE.md)** - Version management with changesets
+- **[Technical Documentation](./docs/technical/TECHNICAL.md)** - Architecture and internals
+
+📖 **[View Documentation Index](./docs/README.md)**
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](./docs/contributing/CONTRIBUTING.md) for details.
+
+**Quick steps:**
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make your changes
 4. Run tests and linter (`npm test && npm run lint`)
-5. Commit your changes following [conventional commits](./COMMIT-GUIDELINES.md) (`git commit -m 'feat: add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
+5. Commit following [conventional commits](./docs/contributing/COMMIT-GUIDELINES.md) (`git commit -m 'feat: add amazing feature'`)
+6. Add a [changeset](./docs/contributing/RELEASE.md) (`npx changeset`)
+7. Push and open a Pull Request
 
-> 📝 This project uses [Conventional Commits](./COMMIT-GUIDELINES.md). Commit messages are automatically validated.
+> 📝 This project uses [Conventional Commits](./docs/contributing/COMMIT-GUIDELINES.md) and [Changesets](./docs/contributing/RELEASE.md) for version management.
 
 ## GitHub Actions Integration
 
@@ -1285,6 +1303,12 @@ jobs:
           path: reports/
 ```
 
+## Security
+
+🔐 This project publishes packages with **NPM provenance** enabled, providing cryptographic proof of build authenticity.
+
+For security issues, please see [SECURITY.md](./SECURITY.md) for our security policy and how to report vulnerabilities responsibly.
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
@@ -1294,6 +1318,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - [npm Package](https://www.npmjs.com/package/git-contributor-stats)
 - [GitHub Repository](https://github.com/vikkrantxx7/git-contributor-stats)
 - [Issue Tracker](https://github.com/vikkrantxx7/git-contributor-stats/issues)
+- [Security Policy](./SECURITY.md)
 
 ---
 
