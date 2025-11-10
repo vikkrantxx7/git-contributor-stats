@@ -11,13 +11,13 @@ pre-commit:
   jobs:
     - name: "🧹 Lint staged files"
       glob: "*.{ts,js,json}"
-      exclude: "dist/,reports/"
+      exclude: "dist/,reports/,coverage/"
       run: npx biome lint {staged_files} --fix
     - name: "🛡️ Type checking"
       glob: "*.{ts}"
-      exclude: "dist/,reports/"
+      exclude: "dist/,reports/,coverage/"
       run: npx tsc --noEmit
     - name: "🎨 Format staged files"
       glob: "*.{ts,js,json}"
-      exclude: "dist/,reports/"
+      exclude: "dist/,reports/,coverage/"
       run: npx biome check {staged_files} --fix --linter-enabled=false
