@@ -76,15 +76,16 @@
     "coverage": "vitest run --coverage",
     "format": "biome check . --linter-enabled=false",
     "format:fix": "biome check . --fix --linter-enabled=false",
-    "help": "node src/cli/entry.ts --help",
+    "help": "node ./dist/cli.mjs --help",
     "lint": "node scripts/lint.js",
     "lint:fix": "node scripts/lintFix.js",
     "prepare": "lefthook install",
     "prepublishOnly": "npm run test && npm run build",
+    "pretest": "npm run build",
     "release": "npm run build && changeset publish --provenance",
-    "report": "node src/cli/entry.ts --out-dir reports --md reports/report.md --html reports/report.html --no-count-lines --charts",
+    "report": "node ./dist/cli.mjs --out-dir reports --md reports/report.md --html reports/report.html --no-count-lines --charts",
     "sort": "sort-package-json",
-    "start": "node src/cli/entry.ts",
+    "start": "node ./dist/cli.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typeCheck": "tsc --noEmit",
@@ -113,7 +114,7 @@
     "vitest": "3.2.4"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": ">=20.19.5"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"

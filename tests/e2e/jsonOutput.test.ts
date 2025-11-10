@@ -28,7 +28,7 @@ describe('JSON output', () => {
   it('produces valid JSON with expected fields', async () => {
     const { stdout, stderr, exitCode } = await execa(
       'node',
-      ['src/cli/entry.ts', '--repo', tmpRepo, '--json', '--no-count-lines'],
+      ['dist/cli.mjs', '--repo', tmpRepo, '--json', '--no-count-lines'],
       { cwd: repoRoot }
     );
     expect(exitCode).toBe(0);

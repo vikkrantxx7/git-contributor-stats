@@ -1139,7 +1139,7 @@ npm run biome:fix
 npm run build:types
 
 # Development mode (uses source files)
-node src/cli/entry.ts --help
+node dist/cli.mjs --help
 
 # Generate sample reports
 npm run report
