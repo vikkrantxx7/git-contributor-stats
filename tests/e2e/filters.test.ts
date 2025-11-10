@@ -25,15 +25,7 @@ describe('Filtering options', () => {
   it('limits by branch/range (HEAD~1..HEAD)', async () => {
     const { stdout, exitCode } = await execa(
       'node',
-      [
-        'src/cli/entry.ts',
-        '--repo',
-        tmpRepo,
-        '--branch',
-        'HEAD~1..HEAD',
-        '--json',
-        '--no-count-lines'
-      ],
+      ['dist/cli.mjs', '--repo', tmpRepo, '--branch', 'HEAD~1..HEAD', '--json', '--no-count-lines'],
       { cwd: repoRoot }
     );
     expect(exitCode).toBe(0);
@@ -45,7 +37,7 @@ describe('Filtering options', () => {
     const { stdout, exitCode } = await execa(
       'node',
       [
-        'src/cli/entry.ts',
+        'dist/cli.mjs',
         '--repo',
         tmpRepo,
         '--author',
