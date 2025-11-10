@@ -4,6 +4,7 @@ A powerful, fast Node.js CLI and library to analyze Git repository contributions
 
 [![npm version](https://img.shields.io/npm/v/git-contributor-stats.svg)](https://www.npmjs.com/package/git-contributor-stats)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=vikkrantxx7_git-contributor-stats&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=vikkrantxx7_git-contributor-stats)
 
 ---
 
