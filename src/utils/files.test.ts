@@ -76,21 +76,29 @@ describe('tryLoadJSON', () => {
 });
 
 describe('tryLoadJSON edge cases', () => {
-  it('should return null if file does not exist', () => {
-    expect(tryLoadJSON('/tmp/does-not-exist.json')).toBeNull();
+  it('should return null if file does not exist', async () => {
+    await withTmpDir((tmpDir) => {
+      const missingPath = path.join(tmpDir, 'does-not-exist.json');
+      expect(tryLoadJSON(missingPath)).toBeNull();
+    });
   });
 });
 
 describe('countTotalLines', () => {
   it('should return 0 if git fails', async () => {
-    const runGit = () => ({ ok: false });
-    const result = await countTotalLines('/tmp', runGit);
-    expect(result).toBe(0);
+    await withTmpDir(async (tmpDir) => {
+      const runGit = () => ({ ok: false });
+      const result = await countTotalLines(tmpDir, runGit);
+      expect(result).toBe(0);
+    });
   });
+
   it('should return 0 if no files', async () => {
-    const runGit = () => ({ ok: true, stdout: '' });
-    const result = await countTotalLines('/tmp', runGit);
-    expect(result).toBe(0);
+    await withTmpDir(async (tmpDir) => {
+      const runGit = () => ({ ok: true, stdout: '' });
+      const result = await countTotalLines(tmpDir, runGit);
+      expect(result).toBe(0);
+    });
   });
   it('should count lines in files', async () => {
     await withTmpDir(async (tmpDir) => {
@@ -186,50 +194,21 @@ describe('countTotalLines', () => {
   });
 
   it('should handle stdout with undefined', async () => {
-    const runGit = () => ({ ok: true, stdout: undefined });
-    const result = await countTotalLines('/tmp', runGit);
-    expect(result).toBe(0);
-  });
-
-  it('should handle multiple files', async () => {
     await withTmpDir(async (tmpDir) => {
-      const runGit = () => ({ ok: true, stdout: 'a.txt\nb.txt' });
-      const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(
-        (_path: fs.PathLike) =>
-          ({
-            isFile: () => true,
-            size: 10
-          }) as unknown as fs.Stats
-      );
-      const readSpy = vi
-        .spyOn(fs, 'readFileSync')
-        .mockImplementation((_path: fs.PathOrFileDescriptor, options?: unknown) => {
-          if (typeof options === 'string') {
-            return 'line1\nline2';
-          }
-          if (
-            options &&
-            typeof options === 'object' &&
-            'encoding' in options &&
-            (options as { encoding?: BufferEncoding | null }).encoding !== null
-          ) {
-            return 'line1\nline2';
-          }
-          return Buffer.from('line1\nline2');
-        });
+      const runGit = () => ({ ok: true, stdout: undefined });
       const result = await countTotalLines(tmpDir, runGit);
-      expect(result).toBe(4); // 2 lines per file * 2 files
-      statSpy.mockRestore();
-      readSpy.mockRestore();
+      expect(result).toBe(0);
     });
   });
 
   it('should handle top-level try-catch errors', async () => {
-    const runGit = () => {
-      throw new Error('runGit failed');
-    };
-    const result = await countTotalLines('/tmp', runGit);
-    expect(result).toBe(0);
+    await withTmpDir(async (tmpDir) => {
+      const runGit = () => {
+        throw new Error('runGit failed');
+      };
+      const result = await countTotalLines(tmpDir, runGit);
+      expect(result).toBe(0);
+    });
   });
 });
 

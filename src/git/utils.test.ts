@@ -1,22 +1,18 @@
-import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import type { GitLogArgsOptions } from './utils';
 import { buildGitLogArgs, isGitRepo, runGit } from './utils';
 
-// Helper to create a temporary git repo for testing
-function setupTempRepo() {
-  const tmpDir = fs.mkdtempSync(path.join(__dirname, 'tmp-git-'));
-  spawnSync('git', ['init'], { cwd: tmpDir });
-  return tmpDir;
-}
-
 describe('isGitRepo', () => {
-  it('should return true for a valid git repo', () => {
-    const repo = setupTempRepo();
-    expect(isGitRepo(repo)).toBe(true);
-    fs.rmSync(repo, { recursive: true, force: true });
+  it('should return true for a directory containing a .git folder', () => {
+    const tmpDir = fs.mkdtempSync(path.join(__dirname, 'tmp-git-'));
+    const gitDir = path.join(tmpDir, '.git');
+    fs.mkdirSync(gitDir, { recursive: true });
+
+    expect(isGitRepo(tmpDir)).toBe(true);
+
+    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   it('should return false for a non-git directory', () => {
