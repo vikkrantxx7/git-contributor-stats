@@ -21,7 +21,7 @@ interface BusFactorFile {
 }
 
 interface BusFactor {
-  filesSingleOwner: BusFactorFile[];
+  filesSingleOwner?: BusFactorFile[];
 }
 
 interface TopStats {
@@ -107,14 +107,16 @@ function addTopContributorsSection(lines: string[], contributors: Contributor[])
 }
 
 function addBusFactorSection(lines: string[], busFactor: BusFactor): void {
+  const filesSingleOwner = busFactor.filesSingleOwner || [];
+
   lines.push(
     '## Bus Factor Analysis',
     '',
-    `**Files with single contributor:** ${busFactor.filesSingleOwner.length}`,
+    `**Files with single contributor:** ${filesSingleOwner.length}`,
     ''
   );
 
-  if (busFactor.filesSingleOwner.length > 0) {
+  if (filesSingleOwner.length > 0) {
     lines.push(
       '### High-Risk Files (Single Owner)',
       '',
@@ -122,7 +124,7 @@ function addBusFactorSection(lines: string[], busFactor: BusFactor): void {
       '|---|---|---:|'
     );
 
-    for (const f of busFactor.filesSingleOwner.slice(0, 20)) {
+    for (const f of filesSingleOwner.slice(0, 20)) {
       lines.push(`| \`${f.file}\` | ${f.owner} | ${f.changes.toLocaleString()} |`);
     }
     lines.push('');
@@ -136,18 +138,15 @@ function addActivityPatternsSection(
 ): void {
   lines.push('## Activity Patterns', '');
 
+  lines.push('### Recent Monthly Activity', '', '| Month | Commits |', '|---|---:|');
   const monthlyEntries = Object.entries(commitFrequency.monthly)
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-12);
 
-  if (monthlyEntries.length > 0) {
-    lines.push('### Recent Monthly Activity', '', '| Month | Commits |', '|---|---:|');
-
-    for (const [month, commits] of monthlyEntries) {
-      lines.push(`| ${month} | ${commits.toLocaleString()} |`);
-    }
-    lines.push('');
+  for (const [month, commits] of monthlyEntries) {
+    lines.push(`| ${month} | ${commits.toLocaleString()} |`);
   }
+  lines.push('');
 
   lines.push(
     '### Commit Heatmap Data',
