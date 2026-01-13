@@ -63,138 +63,108 @@ function createFinal(topContributors: TopContributor[]) {
   };
 }
 
+function withTmpDir<T>(fn: (tmpDir: string) => Promise<T> | T): Promise<T> {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charts-test-'));
+  return Promise.resolve()
+    .then(() => fn(tmpDir))
+    .finally(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+}
+
+function makeContributor(
+  name: string,
+  commits: number,
+  added: number,
+  deleted: number
+): TopContributor {
+  return {
+    name,
+    commits,
+    added,
+    deleted,
+    net: added - deleted,
+    changes: commits + added + deleted,
+    files: {},
+    topFiles: [] as TopFileEntry[]
+  };
+}
+
 describe('generateCharts', () => {
   it('should generate SVG charts for top contributors', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charts-test-'));
     const final = createFinal([
-      {
-        name: 'Alice',
-        commits: 10,
-        added: 20,
-        deleted: 5,
-        net: 15,
-        changes: 25,
-        files: {},
-        topFiles: [] as TopFileEntry[]
-      },
-      {
-        name: 'Bob',
-        commits: 7,
-        added: 15,
-        deleted: 3,
-        net: 12,
-        changes: 18,
-        files: {},
-        topFiles: [] as TopFileEntry[]
-      }
+      makeContributor('Alice', 10, 20, 5),
+      makeContributor('Bob', 7, 15, 3)
     ]);
-    await generateCharts(final, { charts: true, chartsDir: tmpDir, chartFormat: 'svg' });
-    expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+
+    await withTmpDir(async (tmpDir) => {
+      await generateCharts(final, { charts: true, chartsDir: tmpDir, chartFormat: 'svg' });
+      expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
+    });
   });
 
   it('should generate PNG charts for top contributors', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charts-test-'));
     const final = createFinal([
-      {
-        name: 'Alice',
-        commits: 10,
-        added: 20,
-        deleted: 5,
-        net: 15,
-        changes: 25,
-        files: {},
-        topFiles: [] as TopFileEntry[]
-      },
-      {
-        name: 'Bob',
-        commits: 7,
-        added: 15,
-        deleted: 3,
-        net: 12,
-        changes: 18,
-        files: {},
-        topFiles: [] as TopFileEntry[]
-      }
+      makeContributor('Alice', 10, 20, 5),
+      makeContributor('Bob', 7, 15, 3)
     ]);
+
     // Skip if chartjs-node-canvas is not available
     let chartjsNodeCanvasAvailable = false;
     try {
-      // Use dynamic import for ESM compatibility
       await import('chartjs-node-canvas');
       chartjsNodeCanvasAvailable = true;
     } catch {}
     if (!chartjsNodeCanvasAvailable) {
-      // Use console.info for non-critical info
       console.info('Skipping PNG chart test: chartjs-node-canvas not available');
       return;
     }
-    await generateCharts(final, { charts: true, chartsDir: tmpDir, chartFormat: 'png' });
-    expect(fs.existsSync(path.join(tmpDir, 'top-commits.png'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'top-net.png'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'heatmap.png'))).toBe(true);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+
+    await withTmpDir(async (tmpDir) => {
+      await generateCharts(final, { charts: true, chartsDir: tmpDir, chartFormat: 'png' });
+      expect(fs.existsSync(path.join(tmpDir, 'top-commits.png'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'top-net.png'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'heatmap.png'))).toBe(true);
+    });
   }, 30000);
 
   it('should generate both SVG and PNG charts when chartFormat is both', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charts-test-'));
     const final = createFinal([
-      {
-        name: 'Alice',
-        commits: 10,
-        added: 20,
-        deleted: 5,
-        net: 15,
-        changes: 25,
-        files: {},
-        topFiles: [] as TopFileEntry[]
-      },
-      {
-        name: 'Bob',
-        commits: 7,
-        added: 15,
-        deleted: 3,
-        net: 12,
-        changes: 18,
-        files: {},
-        topFiles: [] as TopFileEntry[]
-      }
+      makeContributor('Alice', 10, 20, 5),
+      makeContributor('Bob', 7, 15, 3)
     ]);
-    await generateCharts(final, { charts: true, chartsDir: tmpDir, chartFormat: 'both' });
-    expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'top-commits.png'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'top-net.png'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'heatmap.png'))).toBe(true);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+
+    await withTmpDir(async (tmpDir) => {
+      await generateCharts(final, { charts: true, chartsDir: tmpDir, chartFormat: 'both' });
+      expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'top-commits.png'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'top-net.png'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'heatmap.png'))).toBe(true);
+    });
   });
 
   it('should not generate charts when charts option is false', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charts-test-'));
     const final = createFinal([]);
-    await generateCharts(final, { charts: false, chartsDir: tmpDir, chartFormat: 'svg' });
-    expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(false);
-    expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(false);
-    expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(false);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    await withTmpDir(async (tmpDir) => {
+      await generateCharts(final, { charts: false, chartsDir: tmpDir, chartFormat: 'svg' });
+      expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(false);
+      expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(false);
+      expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(false);
+    });
   });
 });
 
 describe('generateCharts additional branch coverage', () => {
   it('should default chartFormat to svg when omitted', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charts-test-'));
-    const { generateCharts } = await import('./charts');
-
-    await generateCharts(createFinal([]), { charts: true, chartsDir: tmpDir });
-
-    expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
-    expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
-
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    await withTmpDir(async (tmpDir) => {
+      const { generateCharts } = await import('./charts');
+      await generateCharts(createFinal([]), { charts: true, chartsDir: tmpDir });
+      expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
+      expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
+    });
   });
 
   it('should create fallback SVGs when renderers do not write output', async () => {
@@ -271,24 +241,17 @@ describe('generateCharts additional branch coverage', () => {
   });
 
   it('should treat unknown chartFormat values as svg', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charts-test-'));
-
-    try {
+    await withTmpDir(async (tmpDir) => {
       await generateCharts(createFinal([]), {
         charts: true,
         chartsDir: tmpDir,
         chartFormat: 'JPG'
       });
 
-      // Unknown format should normalize to svg
       expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
       expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
       expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
-
-      // And should not create jpg outputs
       expect(fs.existsSync(path.join(tmpDir, 'top-commits.jpg'))).toBe(false);
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    }
+    });
   });
 });

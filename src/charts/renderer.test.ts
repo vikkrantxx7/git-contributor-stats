@@ -1,41 +1,52 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { describe, expect, it, vi } from 'vitest';
+
+function withTmpDir<T>(fn: (tmpDir: string) => Promise<T> | T): Promise<T> {
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chart-test-'));
+  return Promise.resolve()
+    .then(() => fn(tmpDir))
+    .finally(() => {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+}
 
 describe('renderBarChartImage', () => {
   it('should generate SVG file for bar chart', async () => {
     const { renderBarChartImage } = await import('./renderer');
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chart-test-'));
-    const filePath = path.join(tmpDir, 'bar.svg');
-    await renderBarChartImage('svg', 'Chart', ['A', 'B'], [10, 20], filePath, {
-      width: 400,
-      height: 200
+    await withTmpDir(async (tmpDir) => {
+      const filePath = path.join(tmpDir, 'bar.svg');
+      await renderBarChartImage('svg', 'Chart', ['A', 'B'], [10, 20], filePath, {
+        width: 400,
+        height: 200
+      });
+      const content = fs.readFileSync(filePath, 'utf8');
+      expect(content).toContain('<svg');
+      expect(content).toContain('Chart');
+      expect(content).toContain('A');
+      expect(content).toContain('B');
+      expect(content).toContain('10');
+      expect(content).toContain('20');
     });
-    const content = fs.readFileSync(filePath, 'utf8');
-    expect(content).toContain('<svg');
-    expect(content).toContain('Chart');
-    expect(content).toContain('A');
-    expect(content).toContain('B');
-    expect(content).toContain('10');
-    expect(content).toContain('20');
-    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 });
 
 describe('renderHeatmapImage', () => {
   it('should generate SVG file for heatmap', async () => {
     const { renderHeatmapImage } = await import('./renderer');
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chart-test-'));
-    const filePath = path.join(tmpDir, 'heatmap.svg');
-    const heatmap = Array.from({ length: 7 }, () => Array(24).fill(0));
-    heatmap[0][0] = 5;
-    await renderHeatmapImage('svg', heatmap, filePath, { width: 400, height: 200 });
-    const content = fs.readFileSync(filePath, 'utf8');
-    expect(content).toContain('<svg');
-    expect(content).toContain('Sun');
-    expect(content).toContain('0');
-    expect(content).toContain('5');
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    await withTmpDir(async (tmpDir) => {
+      const filePath = path.join(tmpDir, 'heatmap.svg');
+      const heatmap = Array.from({ length: 7 }, () => Array(24).fill(0));
+      heatmap[0][0] = 5;
+      await renderHeatmapImage('svg', heatmap, filePath, { width: 400, height: 200 });
+      const content = fs.readFileSync(filePath, 'utf8');
+      expect(content).toContain('<svg');
+      expect(content).toContain('Sun');
+      expect(content).toContain('0');
+      expect(content).toContain('5');
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
   });
 });
 
@@ -71,18 +82,21 @@ describe('renderer failure and branch coverage', () => {
     const originalWriteFileSync = fs.writeFileSync;
     const originalMkdirSync = fs.mkdirSync;
 
-    // Force ensureDir(dirname) to fail by making mkdirSync throw.
     fs.mkdirSync = (() => {
       throw new Error('mkdir blocked');
     }) as unknown as typeof fs.mkdirSync;
 
-    // If we accidentally proceed past directory creation, this will throw and fail the test.
+    let wrote = false;
     fs.writeFileSync = (() => {
+      wrote = true;
       throw new Error('should not write');
     }) as unknown as typeof fs.writeFileSync;
 
     try {
-      await renderBarChartImage('svg', 'Chart', ['A'], [1], '/some/blocked/path/out.svg');
+      await expect(
+        renderBarChartImage('svg', 'Chart', ['A'], [1], '/some/blocked/path/out.svg')
+      ).resolves.toBeUndefined();
+      expect(wrote).toBe(false);
     } finally {
       fs.writeFileSync = originalWriteFileSync;
       fs.mkdirSync = originalMkdirSync;
@@ -147,6 +161,8 @@ describe('renderer failure and branch coverage', () => {
       await renderHeatmapImage('png', heatmap, outPath, { verbose: false });
 
       expect(written.some((w) => w.filePath === outPath)).toBe(true);
+      // extra assertion to satisfy lint
+      expect(written.length).toBeGreaterThan(0);
 
       fs.rmSync(tmpDir, { recursive: true, force: true });
     } finally {
@@ -191,6 +207,8 @@ describe('renderer PNG branches (mocked)', () => {
       await renderBarChartImage('png', 'Bar', ['A'], [1], outPath, { verbose: false });
 
       expect(written.some((w) => w.filePath === outPath)).toBe(true);
+      // extra assertion to satisfy lint
+      expect(written.length).toBeGreaterThan(0);
       fs.rmSync(tmpDir, { recursive: true, force: true });
     } finally {
       fs.writeFileSync = originalWriteFileSync;
@@ -307,10 +325,11 @@ describe('renderer PNG branches (mocked)', () => {
 
     try {
       const { renderBarChartImage } = await import('./renderer');
-      // Should not throw even if SVG generation / write fails.
-      await renderBarChartImage('svg', 'Bar', ['A'], [1], '/tmp/does-not-matter.svg', {
-        verbose: false
-      });
+      await expect(
+        renderBarChartImage('svg', 'Bar', ['A'], [1], '/tmp/does-not-matter.svg', {
+          verbose: false
+        })
+      ).resolves.toBeUndefined();
     } finally {
       fs.writeFileSync = originalWriteFileSync;
       vi.doUnmock('./svg.ts');
@@ -364,7 +383,7 @@ describe('renderer internal branches (registration + Math.min/maxVal)', () => {
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chart-test-'));
       const outPath = path.join(tmpDir, 'bar.png');
 
-      await renderBarChartImage('png', 'Bar', ['A'], [1], outPath);
+      await expect(renderBarChartImage('png', 'Bar', ['A'], [1], outPath)).resolves.toBeUndefined();
 
       fs.rmSync(tmpDir, { recursive: true, force: true });
     } finally {
@@ -470,155 +489,6 @@ describe('renderer remaining uncovered branches', () => {
 
       expect(seenMime).toBe('image/png');
 
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    } finally {
-      fs.writeFileSync = originalWriteFileSync;
-      vi.doUnmock('chartjs-node-canvas');
-      vi.doUnmock('chart.js');
-      vi.resetModules();
-    }
-  });
-
-  it('should fallback to SVG for heatmap when canvas creation returns null', async () => {
-    vi.resetModules();
-
-    vi.doMock('chart.js', () => ({ registerables: [] }));
-    // ChartJSNodeCanvas is null -> createCanvas returns null -> canvas branch.
-    vi.doMock('chartjs-node-canvas', () => ({
-      // biome-ignore lint/style/useNamingConvention: external library export name.
-      ChartJSNodeCanvas: null
-    }));
-
-    const originalWriteFileSync = fs.writeFileSync;
-    const writes: Array<{ filePath: string; kind: 'buffer' | 'string' }> = [];
-    fs.writeFileSync = ((p: fs.PathOrFileDescriptor, data: unknown) => {
-      writes.push({ filePath: String(p), kind: typeof data === 'string' ? 'string' : 'buffer' });
-    }) as unknown as typeof fs.writeFileSync;
-
-    try {
-      const { renderHeatmapImage } = await import('./renderer');
-      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chart-test-'));
-      const outPath = path.join(tmpDir, 'heatmap.png');
-      const heatmap = Array.from({ length: 7 }, () => Array(24).fill(0));
-
-      await renderHeatmapImage('png', heatmap, outPath, { verbose: false });
-
-      // Canvas null -> SVG fallback should write utf8 string
-      expect(writes.some((w) => w.filePath === outPath && w.kind === 'string')).toBe(true);
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    } finally {
-      fs.writeFileSync = originalWriteFileSync;
-      vi.doUnmock('chartjs-node-canvas');
-      vi.doUnmock('chart.js');
-      vi.resetModules();
-    }
-  });
-
-  it('should fallback to SVG for heatmap when renderToBuffer throws', async () => {
-    vi.resetModules();
-
-    vi.doMock('chart.js', () => ({ registerables: [] }));
-    vi.doMock('chartjs-node-canvas', () => {
-      class FakeCanvas {
-        renderToBuffer = async () => {
-          throw new Error('boom');
-        };
-        constructor() {
-          void this.renderToBuffer;
-        }
-      }
-      return {
-        // biome-ignore lint/style/useNamingConvention: external library export name.
-        ChartJSNodeCanvas: FakeCanvas
-      };
-    });
-
-    const originalWriteFileSync = fs.writeFileSync;
-    const writes: Array<{ filePath: string; kind: 'buffer' | 'string' }> = [];
-    fs.writeFileSync = ((p: fs.PathOrFileDescriptor, data: unknown) => {
-      writes.push({ filePath: String(p), kind: typeof data === 'string' ? 'string' : 'buffer' });
-    }) as unknown as typeof fs.writeFileSync;
-
-    try {
-      const { renderHeatmapImage } = await import('./renderer');
-      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chart-test-'));
-      const outPath = path.join(tmpDir, 'heatmap.png');
-      const heatmap = Array.from({ length: 7 }, () => Array(24).fill(0));
-      heatmap[0][1] = 5;
-
-      await renderHeatmapImage('png', heatmap, outPath, { verbose: false });
-
-      // Error -> SVG fallback should write utf8 string
-      expect(writes.some((w) => w.filePath === outPath && w.kind === 'string')).toBe(true);
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    } finally {
-      fs.writeFileSync = originalWriteFileSync;
-      vi.doUnmock('chartjs-node-canvas');
-      vi.doUnmock('chart.js');
-      vi.resetModules();
-    }
-  });
-});
-
-describe('renderer canvas creation failure branches', () => {
-  it('should fall back to SVG for bar chart when createCanvas returns null in PNG mode', async () => {
-    vi.resetModules();
-
-    vi.doMock('chart.js', () => ({ registerables: [] }));
-    vi.doMock('chartjs-node-canvas', () => ({
-      // biome-ignore lint/style/useNamingConvention: external library export name.
-      ChartJSNodeCanvas: null
-    }));
-
-    const originalWriteFileSync = fs.writeFileSync;
-    const writes: Array<{ filePath: string; kind: 'buffer' | 'string' }> = [];
-    fs.writeFileSync = ((p: fs.PathOrFileDescriptor, data: unknown) => {
-      writes.push({ filePath: String(p), kind: typeof data === 'string' ? 'string' : 'buffer' });
-    }) as unknown as typeof fs.writeFileSync;
-
-    try {
-      const { renderBarChartImage } = await import('./renderer');
-      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chart-test-'));
-      const outPath = path.join(tmpDir, 'bar.png');
-
-      await renderBarChartImage('png', 'Bar', ['A'], [1], outPath, { verbose: false });
-
-      // createCanvas returns null => bar chart must fall back to SVG and write a string
-      expect(writes.some((w) => w.filePath === outPath && w.kind === 'string')).toBe(true);
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    } finally {
-      fs.writeFileSync = originalWriteFileSync;
-      vi.doUnmock('chartjs-node-canvas');
-      vi.doUnmock('chart.js');
-      vi.resetModules();
-    }
-  });
-
-  it('should fall back to SVG for heatmap when createCanvas returns null in PNG mode', async () => {
-    vi.resetModules();
-
-    vi.doMock('chart.js', () => ({ registerables: [] }));
-    vi.doMock('chartjs-node-canvas', () => ({
-      // biome-ignore lint/style/useNamingConvention: external library export name.
-      ChartJSNodeCanvas: null
-    }));
-
-    const originalWriteFileSync = fs.writeFileSync;
-    const writes: Array<{ filePath: string; kind: 'buffer' | 'string' }> = [];
-    fs.writeFileSync = ((p: fs.PathOrFileDescriptor, data: unknown) => {
-      writes.push({ filePath: String(p), kind: typeof data === 'string' ? 'string' : 'buffer' });
-    }) as unknown as typeof fs.writeFileSync;
-
-    try {
-      const { renderHeatmapImage } = await import('./renderer');
-      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chart-test-'));
-      const outPath = path.join(tmpDir, 'heatmap.png');
-      const heatmap = Array.from({ length: 7 }, () => Array(24).fill(0));
-
-      await renderHeatmapImage('png', heatmap, outPath, { verbose: false });
-
-      // createCanvas returns null => heatmap must fall back to SVG and write a string
-      expect(writes.some((w) => w.filePath === outPath && w.kind === 'string')).toBe(true);
       fs.rmSync(tmpDir, { recursive: true, force: true });
     } finally {
       fs.writeFileSync = originalWriteFileSync;

@@ -1,3 +1,4 @@
+import { describe, expect, it, vi } from 'vitest';
 import type { TopContributor } from '../analytics/analyzer';
 import { handleStdoutOutput } from './output';
 import type { ContributorStatsResult } from './stats';
@@ -46,219 +47,207 @@ function makeFinal(): ContributorStatsResult {
   };
 }
 
+function withLogSpy(
+  fn: (logSpy: ReturnType<typeof vi.spyOn>, final: ContributorStatsResult) => void
+): void {
+  const final = makeFinal();
+  const logSpy = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+  try {
+    fn(logSpy, final);
+  } finally {
+    logSpy.mockRestore();
+  }
+}
+
 describe('handleStdoutOutput', () => {
   it('should print JSON when json option is true', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { json: true });
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Alice'));
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { json: true });
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Alice'));
+    });
   });
 
   it('should print JSON when format is json', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { format: 'json' });
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Alice'));
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { format: 'json' });
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Alice'));
+    });
   });
 
   it('should print JSON when format is JSON (uppercase)', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { format: 'JSON' });
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Alice'));
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { format: 'JSON' });
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Alice'));
+    });
   });
 
   it('should print CSV when format is csv', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { format: 'csv' });
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { format: 'csv' });
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should print CSV when format is CSV (uppercase)', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { format: 'CSV' });
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { format: 'CSV' });
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should print table when no format is specified', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, {});
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, {});
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should print table when format is undefined', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { format: undefined });
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { format: undefined });
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should use labelBy from opts when provided', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { labelBy: 'email' });
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { labelBy: 'email' });
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should use labelBy from final.basic when opts.labelBy is not provided', () => {
-    const final = makeFinal();
-    final.basic.labelBy = 'email';
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, {});
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      final.basic.labelBy = 'email';
+      handleStdoutOutput(final, {});
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should default to name when labelBy is not provided anywhere', () => {
-    const final = makeFinal();
-    (final.basic as unknown as { labelBy?: 'email' | 'name' }).labelBy = undefined;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, {});
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      (final.basic as unknown as { labelBy?: 'email' | 'name' }).labelBy = undefined;
+      handleStdoutOutput(final, {});
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should print top stats when topStats option is set', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { topStats: 'commits' });
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { topStats: 'commits' });
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
+    });
   });
 
   it('should not print top stats when topStats is empty string', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { topStats: '' });
-    expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { topStats: '' });
+      expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
+    });
   });
 
   it('should not print top stats when topStats is undefined', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { topStats: undefined });
-    expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { topStats: undefined });
+      expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
+    });
   });
 
   it('should handle final.topStats being undefined', () => {
-    const final = makeFinal();
-    (final as unknown as { topStats?: unknown }).topStats = undefined;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { topStats: 'commits' });
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      (final as unknown as { topStats?: unknown }).topStats = undefined;
+      handleStdoutOutput(final, { topStats: 'commits' });
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
+    });
   });
 
   it('should handle null values in topStats', () => {
-    const final = makeFinal();
-    final.topStats.byCommits = null;
-    // TopStatsSummary doesn't allow undefined for byAdditions, but runtime can contain it
-    (final.topStats as unknown as { byAdditions?: unknown }).byAdditions = undefined;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { topStats: 'commits,additions,deletions' });
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      final.topStats.byCommits = null;
+      // TopStatsSummary doesn't allow undefined for byAdditions, but runtime can contain it
+      (final.topStats as unknown as { byAdditions?: unknown }).byAdditions = undefined;
+      handleStdoutOutput(final, { topStats: 'commits,additions,deletions' });
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
+    });
   });
 
   it('should handle contributors with email', () => {
-    const final = makeFinal();
-    final.topContributors[0].email = 'alice@example.com';
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, {});
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      final.topContributors[0].email = 'alice@example.com';
+      handleStdoutOutput(final, {});
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should handle contributors without name or email', () => {
-    const final = makeFinal();
-    final.topContributors[0].name = undefined;
-    final.topContributors[0].email = undefined;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, {});
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      final.topContributors[0].name = undefined;
+      final.topContributors[0].email = undefined;
+      handleStdoutOutput(final, {});
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should handle contributors with email but no name', () => {
-    const final = makeFinal();
-    final.topContributors[0].name = undefined;
-    final.topContributors[0].email = 'alice@example.com';
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, {});
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      final.topContributors[0].name = undefined;
+      final.topContributors[0].email = 'alice@example.com';
+      handleStdoutOutput(final, {});
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should handle contributors with name but no email', () => {
-    const final = makeFinal();
-    final.topContributors[0].email = undefined;
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, {});
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      final.topContributors[0].email = undefined;
+      handleStdoutOutput(final, {});
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should handle multiple contributors', () => {
-    const final = makeFinal();
-    final.topContributors.push({
-      name: 'Bob',
-      email: 'bob@example.com',
-      commits: 3,
-      added: 5,
-      deleted: 1,
-      net: 4,
-      changes: 6,
-      files: {},
-      topFiles: []
+    withLogSpy((logSpy, final) => {
+      final.topContributors.push({
+        name: 'Bob',
+        email: 'bob@example.com',
+        commits: 3,
+        added: 5,
+        deleted: 1,
+        net: 4,
+        changes: 6,
+        files: {},
+        topFiles: []
+      });
+      handleStdoutOutput(final, {});
+      expect(logSpy).toHaveBeenCalled();
     });
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, {});
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
   });
 
   it('should print table with CSV format when labelBy is email', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { format: 'csv', labelBy: 'email' });
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { format: 'csv', labelBy: 'email' });
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should handle empty opts object', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final);
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final);
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should handle format with mixed case', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { format: 'CsV' });
-    expect(logSpy).toHaveBeenCalled();
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { format: 'CsV' });
+      expect(logSpy).toHaveBeenCalled();
+    });
   });
 
   it('should handle topStats with multiple metrics', () => {
-    const final = makeFinal();
-    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    handleStdoutOutput(final, { topStats: 'commits,additions,deletions,net,changes' });
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
-    logSpy.mockRestore();
+    withLogSpy((logSpy, final) => {
+      handleStdoutOutput(final, { topStats: 'commits,additions,deletions,net,changes' });
+      expect(logSpy).toHaveBeenCalledWith(expect.stringContaining('Top stats:'));
+    });
   });
 });

@@ -1,4 +1,14 @@
+import { describe, expect, it } from 'vitest';
 import { buildAliasResolver } from './aliases.ts';
+
+function assertResolve(config: unknown, cases: Array<[string, string, string]>) {
+  const { resolve } = buildAliasResolver(config as never);
+  expect(resolve).not.toBeNull();
+  if (!resolve) return;
+  for (const [email, name, expected] of cases) {
+    expect(resolve(email, name)).toBe(expected);
+  }
+}
 
 describe('buildAliasResolver', () => {
   it('should return null resolver and empty canonicalDetails when config is undefined', () => {
@@ -8,32 +18,21 @@ describe('buildAliasResolver', () => {
   });
 
   it('should resolve mapped aliases', () => {
-    const config = { map: { alice: 'alicia', bob: 'robert' } };
-    const { resolve } = buildAliasResolver(config);
-    expect(resolve).not.toBeNull();
-    if (resolve) {
-      expect(resolve('alice', 'Alice')).toBe('alicia');
-      expect(resolve('bob', 'Bob')).toBe('robert');
-    }
+    assertResolve({ map: { alice: 'alicia', bob: 'robert' } }, [
+      ['alice', 'Alice', 'alicia'],
+      ['bob', 'Bob', 'robert']
+    ]);
   });
 
   it('should resolve regex aliases', () => {
-    const config = { map: { '/^A.+e$/': 'Alicia' } };
-    const { resolve } = buildAliasResolver(config);
-    expect(resolve).not.toBeNull();
-    if (resolve) {
-      expect(resolve('alice', 'Alice')).toBe('alicia');
-    }
+    assertResolve({ map: { '/^A.+e$/': 'Alicia' } }, [['alice', 'Alice', 'alicia']]);
   });
 
   it('should resolve group aliases', () => {
-    const config = { groups: [['alice', 'alicia', 'ali']] };
-    const { resolve } = buildAliasResolver(config);
-    expect(resolve).not.toBeNull();
-    if (resolve) {
-      expect(resolve('alice', 'Alice')).toBe('alice'); // canonical is 'alice'
-      expect(resolve('ali', 'Ali')).toBe('alice');
-    }
+    assertResolve({ groups: [['alice', 'alicia', 'ali']] }, [
+      ['alice', 'Alice', 'alice'],
+      ['ali', 'Ali', 'alice']
+    ]);
   });
 
   it('should resolve canonical details', () => {
@@ -45,42 +44,25 @@ describe('buildAliasResolver', () => {
 
 describe('buildAliasResolver edge cases', () => {
   it('should handle flat map structure', () => {
-    const config = { alice: 'alicia', bob: 'robert' };
-    const { resolve } = buildAliasResolver(config);
-    expect(resolve).not.toBeNull();
-    if (resolve) {
-      expect(resolve('alice', 'Alice')).toBe('alicia');
-      expect(resolve('bob', 'Bob')).toBe('robert');
-    }
+    assertResolve({ alice: 'alicia', bob: 'robert' }, [
+      ['alice', 'Alice', 'alicia'],
+      ['bob', 'Bob', 'robert']
+    ]);
   });
 
   it('should skip invalid regex patterns', () => {
-    const config = { map: { '/invalid[': 'broken' } };
-    const { resolve } = buildAliasResolver(config);
-    expect(resolve).not.toBeNull();
-    if (resolve) {
-      // Should resolve via string mapping, not regex
-      expect(resolve('invalid', 'invalid')).toBe('broken');
-    }
+    assertResolve({ map: { '/invalid[': 'broken' } }, [['invalid', 'invalid', 'broken']]);
   });
 
   it('should use email as canonical in groups', () => {
-    const config = { groups: [['ali', 'alice@example.com', 'alicia']] };
-    const { resolve } = buildAliasResolver(config);
-    expect(resolve).not.toBeNull();
-    if (resolve) {
-      expect(resolve('ali', 'Ali')).toBe('alice'); // canonical normalized from email
-      expect(resolve('alicia', 'Alicia')).toBe('alice');
-    }
+    assertResolve({ groups: [['ali', 'alice@example.com', 'alicia']] }, [
+      ['ali', 'Ali', 'alice'],
+      ['alicia', 'Alicia', 'alice']
+    ]);
   });
 
   it('should handle empty groups', () => {
-    const config = { groups: [[]] };
-    const { resolve } = buildAliasResolver(config);
-    expect(resolve).not.toBeNull();
-    if (resolve) {
-      expect(resolve('any', 'Any')).toBe('any');
-    }
+    assertResolve({ groups: [[]] }, [['any', 'Any', 'any']]);
   });
 
   it('should handle canonical details with missing name/email', () => {

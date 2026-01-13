@@ -1,26 +1,54 @@
+import { describe, expect, it } from 'vitest';
 import { generateMarkdownReport } from './markdown';
+
+type MarkdownData = Parameters<typeof generateMarkdownReport>[0];
+
+function makeTopContributor(
+  overrides: Partial<MarkdownData['topContributors'][number]> = {}
+): MarkdownData['topContributors'][number] {
+  return {
+    name: 'Alice',
+    email: 'alice@example.com',
+    commits: 1,
+    added: 0,
+    deleted: 0,
+    topFiles: [],
+    ...overrides
+  };
+}
+
+function makeData(overrides: Partial<MarkdownData> = {}): MarkdownData {
+  return {
+    contributors: {},
+    topContributors: [],
+    totalCommits: 0,
+    totalLines: 0,
+    busFactor: { filesSingleOwner: [] },
+    topStats: {},
+    heatmap: [],
+    commitFrequency: { monthly: {} },
+    ...overrides
+  };
+}
 
 describe('generateMarkdownReport', () => {
   it('should generate markdown report with repo name and contributors', () => {
-    const data = {
-      contributors: {},
+    const data = makeData({
       topContributors: [
-        {
+        makeTopContributor({
           name: 'Alice',
-          email: 'alice@example.com',
           commits: 5,
           added: 10,
           deleted: 3,
           topFiles: [{ filename: 'file1.js', changes: 7 }]
-        },
-        {
+        }),
+        makeTopContributor({
           name: 'Bob',
-          email: 'bob@example.com',
           commits: 3,
           added: 7,
           deleted: 2,
           topFiles: [{ filename: 'file2.js', changes: 5 }]
-        }
+        })
       ],
       totalCommits: 8,
       totalLines: 100,
@@ -32,9 +60,8 @@ describe('generateMarkdownReport', () => {
         byNet: { name: 'Alice', net: 7 },
         byChanges: { name: 'Alice', changes: 13 }
       },
-      heatmap: [],
       commitFrequency: { monthly: { '2025-11': 8 } }
-    };
+    });
     const md = generateMarkdownReport(data, '/repo', { includeTopStats: true });
     expect(md).toContain('Git Contributor Stats');
     expect(md).toContain('Alice');
@@ -47,17 +74,9 @@ describe('generateMarkdownReport', () => {
   });
 
   it('should skip top stats section if includeTopStats is false', () => {
-    const data = {
-      contributors: {},
+    const data = makeData({
       topContributors: [
-        {
-          name: 'Alice',
-          email: 'alice@example.com',
-          commits: 5,
-          added: 10,
-          deleted: 3,
-          topFiles: []
-        }
+        makeTopContributor({ name: 'Alice', commits: 5, added: 10, deleted: 3, topFiles: [] })
       ],
       totalCommits: 5,
       totalLines: 100,
@@ -65,26 +84,17 @@ describe('generateMarkdownReport', () => {
       topStats: {
         byCommits: { name: 'Alice', commits: 5 }
       },
-      heatmap: [],
       commitFrequency: { monthly: {} }
-    };
+    });
     const md = generateMarkdownReport(data, '/repo', { includeTopStats: false });
     expect(md).not.toContain('Most commits');
     expect(md).toContain('Top contributors');
   });
 
   it('should include only selected topStatsMetrics', () => {
-    const data = {
-      contributors: {},
+    const data = makeData({
       topContributors: [
-        {
-          name: 'Alice',
-          email: 'alice@example.com',
-          commits: 5,
-          added: 10,
-          deleted: 3,
-          topFiles: []
-        }
+        makeTopContributor({ name: 'Alice', commits: 5, added: 10, deleted: 3, topFiles: [] })
       ],
       totalCommits: 5,
       totalLines: 100,
@@ -93,9 +103,8 @@ describe('generateMarkdownReport', () => {
         byCommits: { name: 'Alice', commits: 5 },
         byAdditions: { name: 'Alice', added: 10 }
       },
-      heatmap: [],
       commitFrequency: { monthly: {} }
-    };
+    });
     const md = generateMarkdownReport(data, '/repo', {
       includeTopStats: true,
       topStatsMetrics: ['commits']
@@ -105,69 +114,60 @@ describe('generateMarkdownReport', () => {
   });
 
   it('should handle empty topContributors', () => {
-    const data = {
-      contributors: {},
+    const data = makeData({
       topContributors: [],
       totalCommits: 0,
       totalLines: 0,
       busFactor: { filesSingleOwner: [] },
       topStats: {},
-      heatmap: [],
       commitFrequency: { monthly: {} }
-    };
+    });
     const md = generateMarkdownReport(data, '/repo');
     expect(md).toContain('Top contributors');
   });
 
   it('should handle empty busFactor.filesSingleOwner', () => {
-    const data = {
-      contributors: {},
+    const data = makeData({
       topContributors: [],
       totalCommits: 0,
       totalLines: 0,
       busFactor: {},
       topStats: {},
-      heatmap: [],
       commitFrequency: { monthly: {} }
-    };
+    });
     const md = generateMarkdownReport(data, '/repo');
     expect(md).toContain('Files with single contributor:** 0');
   });
 
   it('should handle empty commitFrequency.monthly', () => {
-    const data = {
-      contributors: {},
+    const data = makeData({
       topContributors: [],
       totalCommits: 0,
       totalLines: 0,
       busFactor: { filesSingleOwner: [] },
       topStats: {},
-      heatmap: [],
       commitFrequency: { monthly: {} }
-    };
+    });
     const md = generateMarkdownReport(data, '/repo');
     expect(md).toContain('Recent Monthly Activity');
   });
 
   it('should handle empty heatmap', () => {
-    const data = {
-      contributors: {},
+    const data = makeData({
       topContributors: [],
       totalCommits: 0,
       totalLines: 0,
       busFactor: { filesSingleOwner: [] },
       topStats: {},
-      heatmap: [],
       commitFrequency: { monthly: {} }
-    };
+    });
     const md = generateMarkdownReport(data, '/repo');
     expect(md).toContain('Commit Heatmap Data');
     expect(md).toContain('```json');
   });
 
   it('should handle contributors with missing fields', () => {
-    const data = {
-      contributors: {},
+    const data = makeData({
       topContributors: [
         { name: 'Alice', email: '', commits: 5, added: 10, deleted: 3, topFiles: [] },
         { name: 'Bob', email: '', commits: 3, added: 7, deleted: 2, topFiles: [] }
@@ -176,34 +176,24 @@ describe('generateMarkdownReport', () => {
       totalLines: 100,
       busFactor: { filesSingleOwner: [] },
       topStats: {},
-      heatmap: [],
       commitFrequency: { monthly: {} }
-    };
+    });
     const md = generateMarkdownReport(data, '/repo');
     expect(md).toContain('Alice');
     expect(md).toContain('Bob');
   });
 
   it('should handle topStats with missing entries', () => {
-    const data = {
-      contributors: {},
+    const data = makeData({
       topContributors: [
-        {
-          name: 'Alice',
-          email: 'alice@example.com',
-          commits: 5,
-          added: 10,
-          deleted: 3,
-          topFiles: []
-        }
+        makeTopContributor({ name: 'Alice', commits: 5, added: 10, deleted: 3, topFiles: [] })
       ],
       totalCommits: 5,
       totalLines: 100,
       busFactor: { filesSingleOwner: [] },
       topStats: {},
-      heatmap: [],
       commitFrequency: { monthly: {} }
-    };
+    });
     const md = generateMarkdownReport(data, '/repo', { includeTopStats: true });
     expect(md).toContain('Top stats');
   });
@@ -215,14 +205,13 @@ describe('generateMarkdownReport additional branch coverage', () => {
       {
         contributors: { a: {} },
         topContributors: [
-          {
+          makeTopContributor({
             name: 'Alice',
             email: 'a@example.com',
             commits: 1,
             added: 2,
-            deleted: 1,
-            topFiles: []
-          }
+            deleted: 1
+          })
         ],
         totalCommits: 1,
         totalLines: 10,
@@ -243,14 +232,13 @@ describe('generateMarkdownReport additional branch coverage', () => {
       {
         contributors: { a: {} },
         topContributors: [
-          {
+          makeTopContributor({
             name: 'Alice',
             email: 'a@example.com',
             commits: 1,
             added: 2,
-            deleted: 1,
-            topFiles: []
-          }
+            deleted: 1
+          })
         ],
         totalCommits: 1,
         totalLines: 10,

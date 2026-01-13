@@ -1,8 +1,15 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { countTotalLines, ensureDir, safeReadPackageJson, tryLoadJSON } from './files';
+
+function withTmpDir<T>(fn: (dir: string) => T | Promise<T>): Promise<T> {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'utils-test-'));
+  return Promise.resolve(fn(dir)).finally(() => {
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
+}
 
 describe('safeReadPackageJson', () => {
   it('should return object for valid package.json', () => {
@@ -27,12 +34,12 @@ describe('safeReadPackageJson edge cases', () => {
 });
 
 describe('ensureDir', () => {
-  it('should create a directory if it does not exist', () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'utils-test-'));
-    const newDir = path.join(tmpDir, 'subdir');
-    ensureDir(newDir);
-    expect(fs.existsSync(newDir)).toBe(true);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+  it('should create a directory if it does not exist', async () => {
+    await withTmpDir((tmpDir) => {
+      const newDir = path.join(tmpDir, 'subdir');
+      ensureDir(newDir);
+      expect(fs.existsSync(newDir)).toBe(true);
+    });
   });
 });
 
@@ -86,96 +93,96 @@ describe('countTotalLines', () => {
     expect(result).toBe(0);
   });
   it('should count lines in files', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'utils-test-'));
-    const filePath = path.join(tmpDir, 'a.txt');
-    fs.writeFileSync(filePath, 'a\nb\nc');
-    const runGit = () => ({ ok: true, stdout: 'a.txt' });
-    const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(
-      (_path: fs.PathLike) =>
-        ({
-          isFile: () => true,
-          size: 10
-        }) as unknown as fs.Stats
-    );
-    const readSpy = vi
-      .spyOn(fs, 'readFileSync')
-      .mockImplementation((_path: fs.PathOrFileDescriptor, options?: unknown) => {
-        if (typeof options === 'string') {
-          return 'a\nb\nc';
-        }
-        if (
-          options &&
-          typeof options === 'object' &&
-          'encoding' in options &&
-          (options as { encoding?: BufferEncoding | null }).encoding !== null
-        ) {
-          return 'a\nb\nc';
-        }
-        return Buffer.from('a\nb\nc');
-      });
-    const result = await countTotalLines(tmpDir, runGit);
-    expect(result).toBe(3);
-    statSpy.mockRestore();
-    readSpy.mockRestore();
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    await withTmpDir(async (tmpDir) => {
+      const filePath = path.join(tmpDir, 'a.txt');
+      fs.writeFileSync(filePath, 'a\nb\nc');
+      const runGit = () => ({ ok: true, stdout: 'a.txt' });
+      const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(
+        (_path: fs.PathLike) =>
+          ({
+            isFile: () => true,
+            size: 10
+          }) as unknown as fs.Stats
+      );
+      const readSpy = vi
+        .spyOn(fs, 'readFileSync')
+        .mockImplementation((_path: fs.PathOrFileDescriptor, options?: unknown) => {
+          if (typeof options === 'string') {
+            return 'a\nb\nc';
+          }
+          if (
+            options &&
+            typeof options === 'object' &&
+            'encoding' in options &&
+            (options as { encoding?: BufferEncoding | null }).encoding !== null
+          ) {
+            return 'a\nb\nc';
+          }
+          return Buffer.from('a\nb\nc');
+        });
+      const result = await countTotalLines(tmpDir, runGit);
+      expect(result).toBe(3);
+      statSpy.mockRestore();
+      readSpy.mockRestore();
+    });
   });
   it('should skip non-files and large files', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'utils-test-'));
-    const filePath = path.join(tmpDir, 'a.txt');
-    fs.writeFileSync(filePath, 'a\nb\nc');
-    const runGit = () => ({ ok: true, stdout: 'a.txt' });
-    const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(
-      (_path: fs.PathLike) =>
-        ({
-          isFile: () => false,
-          size: 10
-        }) as unknown as fs.Stats
-    );
-    const result = await countTotalLines(tmpDir, runGit);
-    expect(result).toBe(0);
-    statSpy.mockRestore();
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    await withTmpDir(async (tmpDir) => {
+      const filePath = path.join(tmpDir, 'a.txt');
+      fs.writeFileSync(filePath, 'a\nb\nc');
+      const runGit = () => ({ ok: true, stdout: 'a.txt' });
+      const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(
+        (_path: fs.PathLike) =>
+          ({
+            isFile: () => false,
+            size: 10
+          }) as unknown as fs.Stats
+      );
+      const result = await countTotalLines(tmpDir, runGit);
+      expect(result).toBe(0);
+      statSpy.mockRestore();
+    });
   });
   it('should handle file read errors gracefully', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'utils-test-'));
-    const filePath = path.join(tmpDir, 'a.txt');
-    fs.writeFileSync(filePath, 'a\nb\nc');
-    const runGit = () => ({ ok: true, stdout: 'a.txt' });
-    const readSpy = vi.spyOn(fs, 'readFileSync').mockImplementation(() => {
-      throw new Error('fail');
+    await withTmpDir(async (tmpDir) => {
+      const filePath = path.join(tmpDir, 'a.txt');
+      fs.writeFileSync(filePath, 'a\nb\nc');
+      const runGit = () => ({ ok: true, stdout: 'a.txt' });
+      const readSpy = vi.spyOn(fs, 'readFileSync').mockImplementation(() => {
+        throw new Error('fail');
+      });
+      const result = await countTotalLines(tmpDir, runGit);
+      expect(result).toBe(0);
+      readSpy.mockRestore();
     });
-    const result = await countTotalLines(tmpDir, runGit);
-    expect(result).toBe(0);
-    readSpy.mockRestore();
-    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   it('should skip files larger than 50MB', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'utils-test-'));
-    const runGit = () => ({ ok: true, stdout: 'large.txt' });
-    const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(
-      (_path: fs.PathLike) =>
-        ({
-          isFile: () => true,
-          size: 60 * 1024 * 1024 // 60MB
-        }) as unknown as fs.Stats
-    );
-    const result = await countTotalLines(tmpDir, runGit);
-    expect(result).toBe(0);
-    statSpy.mockRestore();
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    await withTmpDir(async (tmpDir) => {
+      const runGit = () => ({ ok: true, stdout: 'large.txt' });
+      const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(
+        (_path: fs.PathLike) =>
+          ({
+            isFile: () => true,
+            size: 60 * 1024 * 1024 // 60MB
+          }) as unknown as fs.Stats
+      );
+      const result = await countTotalLines(tmpDir, runGit);
+      expect(result).toBe(0);
+      statSpy.mockRestore();
+    });
   });
 
   it('should handle statSync errors gracefully', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'utils-test-'));
-    const runGit = () => ({ ok: true, stdout: 'a.txt' });
-    const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(() => {
-      throw new Error('stat failed');
+    await withTmpDir(async (tmpDir) => {
+      const runGit = () => ({ ok: true, stdout: 'a.txt' });
+      const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(() => {
+        throw new Error('stat failed');
+      });
+      const result = await countTotalLines(tmpDir, runGit);
+      expect(result).toBe(0);
+      statSpy.mockRestore();
     });
-    const result = await countTotalLines(tmpDir, runGit);
-    expect(result).toBe(0);
-    statSpy.mockRestore();
-    fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
   it('should handle stdout with undefined', async () => {
@@ -185,36 +192,36 @@ describe('countTotalLines', () => {
   });
 
   it('should handle multiple files', async () => {
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'utils-test-'));
-    const runGit = () => ({ ok: true, stdout: 'a.txt\nb.txt' });
-    const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(
-      (_path: fs.PathLike) =>
-        ({
-          isFile: () => true,
-          size: 10
-        }) as unknown as fs.Stats
-    );
-    const readSpy = vi
-      .spyOn(fs, 'readFileSync')
-      .mockImplementation((_path: fs.PathOrFileDescriptor, options?: unknown) => {
-        if (typeof options === 'string') {
-          return 'line1\nline2';
-        }
-        if (
-          options &&
-          typeof options === 'object' &&
-          'encoding' in options &&
-          (options as { encoding?: BufferEncoding | null }).encoding !== null
-        ) {
-          return 'line1\nline2';
-        }
-        return Buffer.from('line1\nline2');
-      });
-    const result = await countTotalLines(tmpDir, runGit);
-    expect(result).toBe(4); // 2 lines per file * 2 files
-    statSpy.mockRestore();
-    readSpy.mockRestore();
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    await withTmpDir(async (tmpDir) => {
+      const runGit = () => ({ ok: true, stdout: 'a.txt\nb.txt' });
+      const statSpy = vi.spyOn(fs, 'statSync').mockImplementation(
+        (_path: fs.PathLike) =>
+          ({
+            isFile: () => true,
+            size: 10
+          }) as unknown as fs.Stats
+      );
+      const readSpy = vi
+        .spyOn(fs, 'readFileSync')
+        .mockImplementation((_path: fs.PathOrFileDescriptor, options?: unknown) => {
+          if (typeof options === 'string') {
+            return 'line1\nline2';
+          }
+          if (
+            options &&
+            typeof options === 'object' &&
+            'encoding' in options &&
+            (options as { encoding?: BufferEncoding | null }).encoding !== null
+          ) {
+            return 'line1\nline2';
+          }
+          return Buffer.from('line1\nline2');
+        });
+      const result = await countTotalLines(tmpDir, runGit);
+      expect(result).toBe(4); // 2 lines per file * 2 files
+      statSpy.mockRestore();
+      readSpy.mockRestore();
+    });
   });
 
   it('should handle top-level try-catch errors', async () => {

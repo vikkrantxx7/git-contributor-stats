@@ -73,7 +73,7 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
   });
 
   it('returns a friendly error on invalid repository', async () => {
-    let error: any = null;
+    let error: unknown = null;
     try {
       await execa('node', ['dist/cli.mjs', '--repo', '/definitely/not/a/repo', '--json'], {
         cwd: repoRoot
@@ -81,8 +81,11 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
     } catch (e) {
       error = e;
     }
+
     expect(error).toBeTruthy();
-    expect(String(error.stderr || error.stdout || error.message)).toMatch(/Not a Git repository/i);
+
+    const err = error as { stderr?: unknown; stdout?: unknown; message?: unknown };
+    expect(String(err.stderr ?? err.stdout ?? err.message)).toMatch(/Not a Git repository/i);
   });
 
   it('emits debug logs to stderr when verbose is enabled', async () => {
@@ -93,6 +96,6 @@ describe('Additional coverage (charts-dir, similarity, errors, verbose)', () => 
     );
     expect(exitCode).toBe(0);
     expect(stdout.trim().startsWith('{')).toBe(true);
-    expect(stderr).toMatch(/\[debug\]/);
+    expect(stderr).toMatch(/\[debug]/);
   });
 });
