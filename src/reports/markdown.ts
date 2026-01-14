@@ -21,7 +21,7 @@ interface BusFactorFile {
 }
 
 interface BusFactor {
-  filesSingleOwner: BusFactorFile[];
+  filesSingleOwner?: BusFactorFile[];
 }
 
 interface TopStats {
@@ -66,9 +66,16 @@ function formatStatLine(
   return `- **${label}:** ${who}${suffix}`;
 }
 
+function pushLines(lines: string[], ...items: Array<string | string[]>): void {
+  for (const item of items) {
+    if (Array.isArray(item)) lines.push(...item);
+    else lines.push(item);
+  }
+}
+
 function addTopStatsSection(lines: string[], topStats: TopStats, topMetrics: string[]): void {
   const want = new Set(topMetrics);
-  lines.push('## Top stats', '');
+  pushLines(lines, '## Top stats', '');
 
   if (want.has('commits'))
     lines.push(formatStatLine('Most commits', topStats.byCommits, 'commits'));
@@ -84,7 +91,8 @@ function addTopStatsSection(lines: string[], topStats: TopStats, topMetrics: str
 }
 
 function addTopContributorsSection(lines: string[], contributors: Contributor[]): void {
-  lines.push(
+  pushLines(
+    lines,
     '## Top contributors',
     '',
     '| Rank | Contributor | Commits | Added | Deleted | Net | Top Files |',
@@ -107,22 +115,26 @@ function addTopContributorsSection(lines: string[], contributors: Contributor[])
 }
 
 function addBusFactorSection(lines: string[], busFactor: BusFactor): void {
-  lines.push(
+  const filesSingleOwner = busFactor.filesSingleOwner || [];
+
+  pushLines(
+    lines,
     '## Bus Factor Analysis',
     '',
-    `**Files with single contributor:** ${busFactor.filesSingleOwner.length}`,
+    `**Files with single contributor:** ${filesSingleOwner.length}`,
     ''
   );
 
-  if (busFactor.filesSingleOwner.length > 0) {
-    lines.push(
+  if (filesSingleOwner.length > 0) {
+    pushLines(
+      lines,
       '### High-Risk Files (Single Owner)',
       '',
       '| File | Owner | Changes |',
       '|---|---|---:|'
     );
 
-    for (const f of busFactor.filesSingleOwner.slice(0, 20)) {
+    for (const f of filesSingleOwner.slice(0, 20)) {
       lines.push(`| \`${f.file}\` | ${f.owner} | ${f.changes.toLocaleString()} |`);
     }
     lines.push('');
@@ -134,22 +146,20 @@ function addActivityPatternsSection(
   commitFrequency: CommitFrequency,
   heatmap: number[][]
 ): void {
-  lines.push('## Activity Patterns', '');
+  pushLines(lines, '## Activity Patterns', '');
 
+  pushLines(lines, '### Recent Monthly Activity', '', '| Month | Commits |', '|---|---:|');
   const monthlyEntries = Object.entries(commitFrequency.monthly)
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-12);
 
-  if (monthlyEntries.length > 0) {
-    lines.push('### Recent Monthly Activity', '', '| Month | Commits |', '|---|---:|');
-
-    for (const [month, commits] of monthlyEntries) {
-      lines.push(`| ${month} | ${commits.toLocaleString()} |`);
-    }
-    lines.push('');
+  for (const [month, commits] of monthlyEntries) {
+    lines.push(`| ${month} | ${commits.toLocaleString()} |`);
   }
+  lines.push('');
 
-  lines.push(
+  pushLines(
+    lines,
     '### Commit Heatmap Data',
     '',
     '> Commit activity by day of week (0=Sunday) and hour (0-23)',
@@ -171,7 +181,8 @@ export function generateMarkdownReport(
     : ['commits', 'additions', 'deletions', 'net', 'changes'];
   const lines: string[] = [];
 
-  lines.push(
+  pushLines(
+    lines,
     '# Git Contributor Stats',
     '',
     `**Repository:** ${repoRoot}`,

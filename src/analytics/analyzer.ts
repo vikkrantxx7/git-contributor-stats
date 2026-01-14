@@ -134,14 +134,14 @@ function updateCommitFrequency(
 ): void {
   if (!date) return;
 
-  const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  const monthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
   commitFrequencyMonthly[monthKey] = (commitFrequencyMonthly[monthKey] || 0) + 1;
 
   const weekKey = isoWeekKey(date);
   commitFrequencyWeekly[weekKey] = (commitFrequencyWeekly[weekKey] || 0) + 1;
 
-  const day = date.getDay();
-  const hour = date.getHours();
+  const day = date.getUTCDay();
+  const hour = date.getUTCHours();
   heatmap[day][hour] += 1;
 
   // Track contributors for this time slot

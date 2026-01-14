@@ -28,10 +28,12 @@ try {
   }
 }
 
-function createCanvas(format: string, width: number, height: number): unknown {
+function createCanvas(_format: string, width: number, height: number): unknown {
   if (!ChartJSNodeCanvas) return null;
 
-  const type = format === 'svg' ? 'svg' : 'png';
+  // ChartJSNodeCanvas is only used for PNG raster output in this project.
+  // (SVG output uses our generator in svg.ts.)
+  const type = 'png';
   // biome-ignore lint/suspicious/noExplicitAny: ChartJS types are dynamic and not available at compile time
   return new (ChartJSNodeCanvas as any)({
     width,
@@ -119,7 +121,6 @@ export async function renderBarChartImage(
   try {
     const canvas = createCanvas(format, width, height);
     if (!canvas) {
-      // Fallback to SVG if canvas creation failed
       await renderSVGFallback(
         filePath,
         () => generateBarChartSVG(title, sanitized.labels, sanitized.values, { limit }),
@@ -153,7 +154,7 @@ export async function renderBarChartImage(
       }
     };
 
-    const mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
+    const mime = 'image/png';
     // biome-ignore lint/suspicious/noExplicitAny: Canvas renderToBuffer requires dynamic typing
     const buffer = await (canvas as any).renderToBuffer(config, mime);
     fs.writeFileSync(filePath, buffer);
@@ -204,7 +205,6 @@ export async function renderHeatmapImage(
   try {
     const canvas = createCanvas(format, width, height);
     if (!canvas) {
-      // Fallback to SVG if canvas creation failed
       await renderSVGFallback(
         filePath,
         () => generateHeatmapSVG(sanitizedHeatmap),
@@ -247,7 +247,7 @@ export async function renderHeatmapImage(
       }
     };
 
-    const mime = format === 'svg' ? 'image/svg+xml' : 'image/png';
+    const mime = 'image/png';
     // biome-ignore lint/suspicious/noExplicitAny: Canvas renderToBuffer requires dynamic typing
     const buffer = await (canvas as any).renderToBuffer(config, mime);
     fs.writeFileSync(filePath, buffer);
