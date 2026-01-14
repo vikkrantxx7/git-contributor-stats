@@ -9,6 +9,16 @@ import {
   printTable
 } from './aggregator.ts';
 
+const addSortArr = [
+  { additions: 2, commits: 1, changes: 10 },
+  { additions: 5, commits: 2, changes: 8 }
+];
+
+const delSortArr = [
+  { deletions: 2, commits: 1, changes: 10 },
+  { deletions: 5, commits: 2, changes: 8 }
+];
+
 describe('normalizeKey', () => {
   it('should return normalized name when groupBy is name', () => {
     const commit = { authorName: 'Alice', authorEmail: 'alice@example.com' };
@@ -97,7 +107,7 @@ describe('getDisplayDetails', () => {
   });
 
   it('should handle undefined canonicalDetails', () => {
-    const result = getDisplayDetails('eve', 'Eve', 'eve@example.com', undefined);
+    const result = getDisplayDetails('eve', 'Eve', 'eve@example.com');
     expect(result).toEqual({ name: 'Eve', email: 'eve@example.com' });
   });
 });
@@ -391,19 +401,13 @@ describe('pickSortMetric', () => {
     expect(arr[0].commits).toBe(5);
   });
   it('should sort by additions', () => {
-    const arr = [
-      { additions: 2, commits: 1, changes: 10 },
-      { additions: 5, commits: 2, changes: 8 }
-    ];
+    const arr = [...addSortArr];
     const sorter = pickSortMetric('additions');
     arr.sort(sorter);
     expect(arr[0].additions).toBe(5);
   });
   it('should sort by deletions', () => {
-    const arr = [
-      { deletions: 2, commits: 1, changes: 10 },
-      { deletions: 5, commits: 2, changes: 8 }
-    ];
+    const arr = [...delSortArr];
     const sorter = pickSortMetric('deletions');
     arr.sort(sorter);
     expect(arr[0].deletions).toBe(5);
@@ -418,45 +422,28 @@ describe('pickSortMetric', () => {
     expect(arr[0].changes).toBe(5);
   });
 
-  it('should sort by additions using "adds" alias', () => {
-    const arr = [
-      { additions: 2, commits: 1, changes: 10 },
-      { additions: 5, commits: 2, changes: 8 }
-    ];
-    const sorter = pickSortMetric('adds');
-    arr.sort(sorter);
-    expect(arr[0].additions).toBe(5);
-  });
+  it.each([['adds', 'additions'] as const, ['lines-added', 'additions'] as const])(
+    'should sort by %s alias',
+    (metric, _normalized) => {
+      const arr = [...addSortArr];
+      const sorter = pickSortMetric(metric);
+      arr.sort(sorter);
+      expect(arr[0].additions).toBe(5);
 
-  it('should sort by additions using "lines-added" alias', () => {
-    const arr = [
-      { additions: 2, commits: 1, changes: 10 },
-      { additions: 5, commits: 2, changes: 8 }
-    ];
-    const sorter = pickSortMetric('lines-added');
-    arr.sort(sorter);
-    expect(arr[0].additions).toBe(5);
-  });
+      expect(_normalized).toBe('additions');
+    }
+  );
 
-  it('should sort by deletions using "dels" alias', () => {
-    const arr = [
-      { deletions: 2, commits: 1, changes: 10 },
-      { deletions: 5, commits: 2, changes: 8 }
-    ];
-    const sorter = pickSortMetric('dels');
-    arr.sort(sorter);
-    expect(arr[0].deletions).toBe(5);
-  });
-
-  it('should sort by deletions using "lines-deleted" alias', () => {
-    const arr = [
-      { deletions: 2, commits: 1, changes: 10 },
-      { deletions: 5, commits: 2, changes: 8 }
-    ];
-    const sorter = pickSortMetric('lines-deleted');
-    arr.sort(sorter);
-    expect(arr[0].deletions).toBe(5);
-  });
+  it.each([['dels', 'deletions'] as const, ['lines-deleted', 'deletions'] as const])(
+    'should sort by %s alias',
+    (metric, _normalized) => {
+      const arr = [...delSortArr];
+      const sorter = pickSortMetric(metric);
+      arr.sort(sorter);
+      expect(arr[0].deletions).toBe(5);
+      expect(_normalized).toBe('deletions');
+    }
+  );
 
   it('should handle uppercase metric names', () => {
     const arr = [

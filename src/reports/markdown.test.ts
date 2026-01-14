@@ -3,6 +3,10 @@ import { generateMarkdownReport } from './markdown';
 
 type MarkdownData = Parameters<typeof generateMarkdownReport>[0];
 
+const repoPath = '/repo';
+const emptyMonthly: Record<string, number> = {};
+const defaultHeatmap = Array.from({ length: 7 }, () => new Array(24).fill(0));
+
 function makeTopContributor(
   overrides: Partial<MarkdownData['topContributors'][number]> = {}
 ): MarkdownData['topContributors'][number] {
@@ -62,11 +66,11 @@ describe('generateMarkdownReport', () => {
       },
       commitFrequency: { monthly: { '2025-11': 8 } }
     });
-    const md = generateMarkdownReport(data, '/repo', { includeTopStats: true });
+    const md = generateMarkdownReport(data, repoPath, { includeTopStats: true });
     expect(md).toContain('Git Contributor Stats');
     expect(md).toContain('Alice');
     expect(md).toContain('Bob');
-    expect(md).toContain('/repo');
+    expect(md).toContain(repoPath);
     expect(md).toContain('Most commits');
     expect(md).toContain('file1.js');
     expect(md).toContain('file2.js');
@@ -84,9 +88,9 @@ describe('generateMarkdownReport', () => {
       topStats: {
         byCommits: { name: 'Alice', commits: 5 }
       },
-      commitFrequency: { monthly: {} }
+      commitFrequency: { monthly: emptyMonthly }
     });
-    const md = generateMarkdownReport(data, '/repo', { includeTopStats: false });
+    const md = generateMarkdownReport(data, repoPath, { includeTopStats: false });
     expect(md).not.toContain('Most commits');
     expect(md).toContain('Top contributors');
   });
@@ -103,9 +107,9 @@ describe('generateMarkdownReport', () => {
         byCommits: { name: 'Alice', commits: 5 },
         byAdditions: { name: 'Alice', added: 10 }
       },
-      commitFrequency: { monthly: {} }
+      commitFrequency: { monthly: emptyMonthly }
     });
-    const md = generateMarkdownReport(data, '/repo', {
+    const md = generateMarkdownReport(data, repoPath, {
       includeTopStats: true,
       topStatsMetrics: ['commits']
     });
@@ -120,9 +124,9 @@ describe('generateMarkdownReport', () => {
       totalLines: 0,
       busFactor: { filesSingleOwner: [] },
       topStats: {},
-      commitFrequency: { monthly: {} }
+      commitFrequency: { monthly: emptyMonthly }
     });
-    const md = generateMarkdownReport(data, '/repo');
+    const md = generateMarkdownReport(data, repoPath);
     expect(md).toContain('Top contributors');
   });
 
@@ -133,9 +137,9 @@ describe('generateMarkdownReport', () => {
       totalLines: 0,
       busFactor: {},
       topStats: {},
-      commitFrequency: { monthly: {} }
+      commitFrequency: { monthly: emptyMonthly }
     });
-    const md = generateMarkdownReport(data, '/repo');
+    const md = generateMarkdownReport(data, repoPath);
     expect(md).toContain('Files with single contributor:** 0');
   });
 
@@ -146,9 +150,9 @@ describe('generateMarkdownReport', () => {
       totalLines: 0,
       busFactor: { filesSingleOwner: [] },
       topStats: {},
-      commitFrequency: { monthly: {} }
+      commitFrequency: { monthly: emptyMonthly }
     });
-    const md = generateMarkdownReport(data, '/repo');
+    const md = generateMarkdownReport(data, repoPath);
     expect(md).toContain('Recent Monthly Activity');
   });
 
@@ -159,9 +163,9 @@ describe('generateMarkdownReport', () => {
       totalLines: 0,
       busFactor: { filesSingleOwner: [] },
       topStats: {},
-      commitFrequency: { monthly: {} }
+      commitFrequency: { monthly: emptyMonthly }
     });
-    const md = generateMarkdownReport(data, '/repo');
+    const md = generateMarkdownReport(data, repoPath);
     expect(md).toContain('Commit Heatmap Data');
     expect(md).toContain('```json');
   });
@@ -176,9 +180,9 @@ describe('generateMarkdownReport', () => {
       totalLines: 100,
       busFactor: { filesSingleOwner: [] },
       topStats: {},
-      commitFrequency: { monthly: {} }
+      commitFrequency: { monthly: emptyMonthly }
     });
-    const md = generateMarkdownReport(data, '/repo');
+    const md = generateMarkdownReport(data, repoPath);
     expect(md).toContain('Alice');
     expect(md).toContain('Bob');
   });
@@ -192,9 +196,9 @@ describe('generateMarkdownReport', () => {
       totalLines: 100,
       busFactor: { filesSingleOwner: [] },
       topStats: {},
-      commitFrequency: { monthly: {} }
+      commitFrequency: { monthly: emptyMonthly }
     });
-    const md = generateMarkdownReport(data, '/repo', { includeTopStats: true });
+    const md = generateMarkdownReport(data, repoPath, { includeTopStats: true });
     expect(md).toContain('Top stats');
   });
 });
@@ -216,10 +220,10 @@ describe('generateMarkdownReport additional branch coverage', () => {
         totalCommits: 1,
         totalLines: 10,
         busFactor: { filesSingleOwner: [] },
-        heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+        heatmap: defaultHeatmap,
         commitFrequency: { monthly: { '2026-01': 1 } }
       },
-      '/repo',
+      repoPath,
       { includeTopStats: true }
     );
 
@@ -250,10 +254,10 @@ describe('generateMarkdownReport additional branch coverage', () => {
           byNet: { name: 'Bob', email: '', commits: 0, added: 10, deleted: 2 },
           byChanges: undefined
         },
-        heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+        heatmap: defaultHeatmap,
         commitFrequency: { monthly: { '2026-01': 1 } }
       },
-      '/repo',
+      repoPath,
       { includeTopStats: true, topStatsMetrics: ['commits', 'additions', 'net'] }
     );
 
@@ -275,10 +279,10 @@ describe('generateMarkdownReport additional branch coverage', () => {
         totalLines: 0,
         busFactor: {},
         topStats: undefined,
-        heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+        heatmap: defaultHeatmap,
         commitFrequency: { monthly: {} }
       },
-      '/repo'
+      repoPath
     );
 
     expect(md).toContain('## Bus Factor Analysis');
@@ -304,10 +308,10 @@ describe('generateMarkdownReport additional branch coverage', () => {
         totalCommits: 1,
         totalLines: 0,
         busFactor: {},
-        heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+        heatmap: defaultHeatmap,
         commitFrequency: { monthly: { '2026-01': 1 } }
       },
-      '/repo'
+      repoPath
     );
 
     expect(md).toContain('## Top contributors');
@@ -329,10 +333,10 @@ describe('generateMarkdownReport additional branch coverage', () => {
         totalLines: 0,
         busFactor: { filesSingleOwner: [] },
         topStats: undefined,
-        heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+        heatmap: defaultHeatmap,
         commitFrequency: { monthly }
       },
-      '/repo',
+      repoPath,
       { includeTopStats: false }
     );
 

@@ -70,6 +70,32 @@ function withTmpDir<T>(fn: (tmpDir: string) => Promise<T> | T): Promise<T> {
     .finally(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
 }
 
+async function withMockedNoopRenderer<T>(
+  fn: (ctx: { tmpDir: string; generateChartsFresh: typeof generateCharts }) => Promise<T> | T
+): Promise<T> {
+  vi.resetModules();
+
+  vi.doMock('../charts/renderer.ts', () => ({
+    renderBarChartImage: async () => {
+      // no-op: simulate renderer not writing files
+    },
+    renderHeatmapImage: async () => {
+      // no-op
+    }
+  }));
+
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charts-test-'));
+
+  try {
+    const { generateCharts: generateChartsFresh } = await import('./charts');
+    return await fn({ tmpDir, generateChartsFresh });
+  } finally {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    vi.doUnmock('../charts/renderer.ts');
+    vi.resetModules();
+  }
+}
+
 function makeContributor(
   name: string,
   commits: number,
@@ -168,22 +194,8 @@ describe('generateCharts additional branch coverage', () => {
   });
 
   it('should create fallback SVGs when renderers do not write output', async () => {
-    vi.resetModules();
-
-    vi.doMock('../charts/renderer.ts', () => ({
-      renderBarChartImage: async () => {
-        // no-op: simulate renderer not writing files
-      },
-      renderHeatmapImage: async () => {
-        // no-op
-      }
-    }));
-
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charts-test-'));
-
-    try {
-      const { generateCharts } = await import('./charts');
-      await generateCharts(createFinal([]), {
+    await withMockedNoopRenderer(async ({ tmpDir, generateChartsFresh }) => {
+      await generateChartsFresh(createFinal([]), {
         charts: true,
         chartsDir: tmpDir,
         chartFormat: 'svg'
@@ -193,25 +205,10 @@ describe('generateCharts additional branch coverage', () => {
       expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
       expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
       expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
-    } finally {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-      vi.doUnmock('../charts/renderer.ts');
-      vi.resetModules();
-    }
+    });
   });
 
   it('should handle fallback SVG write errors and log when verbose', async () => {
-    vi.resetModules();
-
-    vi.doMock('../charts/renderer.ts', () => ({
-      renderBarChartImage: async () => {
-        // no-op so fallback path triggers
-      },
-      renderHeatmapImage: async () => {
-        // no-op
-      }
-    }));
-
     const originalWriteFileSync = fs.writeFileSync;
     fs.writeFileSync = (() => {
       throw new Error('write blocked');
@@ -219,24 +216,20 @@ describe('generateCharts additional branch coverage', () => {
 
     const consoleErr = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
-    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'charts-test-'));
-
     try {
-      const { generateCharts } = await import('./charts');
-      await generateCharts(createFinal([]), {
-        charts: true,
-        chartsDir: tmpDir,
-        chartFormat: 'svg',
-        verbose: true
-      });
+      await withMockedNoopRenderer(async ({ tmpDir, generateChartsFresh }) => {
+        await generateChartsFresh(createFinal([]), {
+          charts: true,
+          chartsDir: tmpDir,
+          chartFormat: 'svg',
+          verbose: true
+        });
 
-      expect(consoleErr).toHaveBeenCalled();
+        expect(consoleErr).toHaveBeenCalled();
+      });
     } finally {
       consoleErr.mockRestore();
       fs.writeFileSync = originalWriteFileSync;
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-      vi.doUnmock('../charts/renderer.ts');
-      vi.resetModules();
     }
   });
 

@@ -10,6 +10,13 @@ function assertResolve(config: unknown, cases: Array<[string, string, string]>) 
   }
 }
 
+const baseMappedAliasCases: Array<[string, string, string]> = [
+  ['alice', 'Alice', 'alicia'],
+  ['bob', 'Bob', 'robert']
+];
+
+const mappedAliases = { alice: 'alicia', bob: 'robert' };
+
 describe('buildAliasResolver', () => {
   it('should return null resolver and empty canonicalDetails when config is undefined', () => {
     const { resolve, canonicalDetails } = buildAliasResolver();
@@ -18,10 +25,7 @@ describe('buildAliasResolver', () => {
   });
 
   it('should resolve mapped aliases', () => {
-    assertResolve({ map: { alice: 'alicia', bob: 'robert' } }, [
-      ['alice', 'Alice', 'alicia'],
-      ['bob', 'Bob', 'robert']
-    ]);
+    assertResolve({ map: mappedAliases }, baseMappedAliasCases);
   });
 
   it('should resolve regex aliases', () => {
@@ -44,10 +48,7 @@ describe('buildAliasResolver', () => {
 
 describe('buildAliasResolver edge cases', () => {
   it('should handle flat map structure', () => {
-    assertResolve({ alice: 'alicia', bob: 'robert' }, [
-      ['alice', 'Alice', 'alicia'],
-      ['bob', 'Bob', 'robert']
-    ]);
+    assertResolve(mappedAliases, baseMappedAliasCases);
   });
 
   it('should skip invalid regex patterns', () => {

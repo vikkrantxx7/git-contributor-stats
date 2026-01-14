@@ -4,21 +4,42 @@ import { describe, expect, it, vi } from 'vitest';
 import type { GitLogArgsOptions } from './utils';
 import { buildGitLogArgs, isGitRepo, runGit } from './utils';
 
+function rmTmpDir(tmpDir: string) {
+  fs.rmSync(tmpDir, { recursive: true, force: true });
+}
+
+function makeTmpDir(prefix: string) {
+  return fs.mkdtempSync(path.join(__dirname, prefix));
+}
+
+async function withMockedSpawnSync(
+  spawnSyncImpl: () => { error: unknown; status: number | null; stdout: string; stderr: string }
+) {
+  vi.resetModules();
+
+  vi.doMock('node:child_process', () => ({
+    spawnSync: spawnSyncImpl
+  }));
+
+  const { runGit: runGitMocked } = await import('./utils');
+  return runGitMocked;
+}
+
 describe('isGitRepo', () => {
   it('should return true for a directory containing a .git folder', () => {
-    const tmpDir = fs.mkdtempSync(path.join(__dirname, 'tmp-git-'));
+    const tmpDir = makeTmpDir('tmp-git-');
     const gitDir = path.join(tmpDir, '.git');
     fs.mkdirSync(gitDir, { recursive: true });
 
     expect(isGitRepo(tmpDir)).toBe(true);
 
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    rmTmpDir(tmpDir);
   });
 
   it('should return false for a non-git directory', () => {
-    const tmpDir = fs.mkdtempSync(path.join(__dirname, 'tmp-non-git-'));
+    const tmpDir = makeTmpDir('tmp-non-git-');
     expect(isGitRepo(tmpDir)).toBe(false);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    rmTmpDir(tmpDir);
   });
 });
 
@@ -60,7 +81,7 @@ describe('runGit', () => {
   });
 
   it('should handle non-repo directory', () => {
-    const tmpDir = fs.mkdtempSync(path.join(__dirname, 'tmp-non-git-'));
+    const tmpDir = makeTmpDir('tmp-non-git-');
     const result = runGit(tmpDir, ['status']);
     // Accept any result, but must not throw and must return a GitResult object
     expect(result).toHaveProperty('ok');
@@ -80,62 +101,46 @@ describe('runGit', () => {
       output.includes('ambiguous argument') ||
       output.length > 0;
     expect(isNonRepo).toBe(true);
-    fs.rmSync(tmpDir, { recursive: true, force: true });
+    rmTmpDir(tmpDir);
   });
 });
 
 describe('runGit additional branches', () => {
   it('should return a friendly ENOENT message when git executable is missing', async () => {
-    // We need to mock child_process.spawnSync used by runGit.
-    vi.resetModules();
-
-    vi.doMock('node:child_process', () => ({
-      spawnSync: () => ({
-        error: Object.assign(new Error('not found'), { code: 'ENOENT' }),
-        status: null,
-        stdout: '',
-        stderr: ''
-      })
+    const runGitMocked = await withMockedSpawnSync(() => ({
+      error: Object.assign(new Error('not found'), { code: 'ENOENT' }),
+      status: null,
+      stdout: '',
+      stderr: ''
     }));
 
-    const { runGit: runGitMocked } = await import('./utils');
     const result = runGitMocked('.', ['--version']);
     expect(result.ok).toBe(false);
     expect(result.error).toMatch(/not installed|path/i);
   });
 
   it('should treat no-commits-yet/bad HEAD stderr as ok with empty stdout', async () => {
-    vi.resetModules();
-
-    vi.doMock('node:child_process', () => ({
-      spawnSync: () => ({
-        error: null,
-        status: 128,
-        stdout: '',
-        stderr:
-          "fatal: ambiguous argument 'HEAD': unknown revision or path not in the working tree.\n"
-      })
+    const runGitMocked = await withMockedSpawnSync(() => ({
+      error: null,
+      status: 128,
+      stdout: '',
+      stderr:
+        "fatal: ambiguous argument 'HEAD': unknown revision or path not in the working tree.\n"
     }));
 
-    const { runGit: runGitMocked } = await import('./utils');
     const result = runGitMocked('.', ['log']);
     expect(result.ok).toBe(true);
     expect(result.stdout).toBe('');
   });
 
   it('should return a generic execution error message for non-ENOENT spawn errors', async () => {
-    vi.resetModules();
-
-    vi.doMock('node:child_process', () => ({
-      spawnSync: () => ({
-        error: Object.assign(new Error('EACCES'), { code: 'EACCES' }),
-        status: null,
-        stdout: '',
-        stderr: ''
-      })
+    const runGitMocked = await withMockedSpawnSync(() => ({
+      error: Object.assign(new Error('EACCES'), { code: 'EACCES' }),
+      status: null,
+      stdout: '',
+      stderr: ''
     }));
 
-    const { runGit: runGitMocked } = await import('./utils');
     const result = runGitMocked('.', ['--version']);
     expect(result.ok).toBe(false);
     expect(result.error).toMatch(/Failed to execute git/i);

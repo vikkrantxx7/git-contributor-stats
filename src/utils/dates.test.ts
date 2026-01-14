@@ -1,110 +1,36 @@
 import { isoWeekKey, parseDateInput } from './dates';
 
+function expectRelativeDays(input: string, expectedDays: number) {
+  const result = parseDateInput(input);
+  expect(result).toBeDefined();
+  if (!result) throw new Error('parseDateInput did not return a date string');
+
+  const d = new Date(result);
+  const now = new Date();
+  const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+  expect(diff).toBe(expectedDays);
+}
+
 describe('parseDateInput', () => {
   it('should return undefined for empty input', () => {
     expect(parseDateInput()).toBeUndefined();
     expect(parseDateInput('')).toBeUndefined();
   });
 
-  it('should parse relative days', () => {
-    const result = parseDateInput('2.days');
-    if (result) {
-      const d = new Date(result);
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-      expect(diff).toBe(2); // 2 days ago
-    } else {
-      throw new Error('parseDateInput did not return a date string');
-    }
-  });
+  const relativeCases = [
+    ['relative days', '2.days', 2],
+    ['relative day (singular)', '1.day', 1],
+    ['relative weeks', '2.weeks', 14],
+    ['relative week (singular)', '1.week', 7],
+    ['relative months', '2.months', 60],
+    ['relative month (singular)', '1.month', 30],
+    ['relative years', '1.years', 365],
+    ['relative year (singular)', '1.year', 365],
+    ['uppercase units', '3.DAYS', 3]
+  ] as const;
 
-  it('should parse relative day (singular)', () => {
-    const result = parseDateInput('1.day');
-    if (result) {
-      const d = new Date(result);
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-      expect(diff).toBe(1); // 1 day ago
-    } else {
-      throw new Error('parseDateInput did not return a date string');
-    }
-  });
-
-  it('should parse relative weeks', () => {
-    const result = parseDateInput('2.weeks');
-    expect(result).toBeDefined();
-    if (result) {
-      const d = new Date(result);
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-      expect(diff).toBe(14); // 2 weeks = 14 days
-    }
-  });
-
-  it('should parse relative week (singular)', () => {
-    const result = parseDateInput('1.week');
-    expect(result).toBeDefined();
-    if (result) {
-      const d = new Date(result);
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-      expect(diff).toBe(7); // 1 week = 7 days
-    }
-  });
-
-  it('should parse relative months', () => {
-    const result = parseDateInput('2.months');
-    expect(result).toBeDefined();
-    if (result) {
-      const d = new Date(result);
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-      expect(diff).toBe(60); // 2 months = ~60 days
-    }
-  });
-
-  it('should parse relative month (singular)', () => {
-    const result = parseDateInput('1.month');
-    expect(result).toBeDefined();
-    if (result) {
-      const d = new Date(result);
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-      expect(diff).toBe(30); // 1 month = ~30 days
-    }
-  });
-
-  it('should parse relative years', () => {
-    const result = parseDateInput('1.years');
-    expect(result).toBeDefined();
-    if (result) {
-      const d = new Date(result);
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-      expect(diff).toBe(365); // 1 year = 365 days
-    }
-  });
-
-  it('should parse relative year (singular)', () => {
-    const result = parseDateInput('1.year');
-    expect(result).toBeDefined();
-    if (result) {
-      const d = new Date(result);
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-      expect(diff).toBe(365); // 1 year = 365 days
-    }
-  });
-
-  it('should handle uppercase units', () => {
-    const result = parseDateInput('3.DAYS');
-    expect(result).toBeDefined();
-    if (result) {
-      const d = new Date(result);
-      const now = new Date();
-      const diff = Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
-      expect(diff).toBe(3);
-    }
+  it.each(relativeCases)('should parse %s', (_title, input, expectedDays) => {
+    expectRelativeDays(input, expectedDays);
   });
 
   it('should handle mixed case units', () => {
