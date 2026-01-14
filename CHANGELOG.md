@@ -1,5 +1,11 @@
 # git-contributor-stats
 
+## 2.2.0
+
+### Minor Changes
+
+- 67d177f: test: add comprehensive code coverage by writing unit tests
+
 ## 2.1.1
 
 ### Patch Changes

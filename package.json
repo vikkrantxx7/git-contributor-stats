@@ -1,6 +1,6 @@
 {
   "name": "git-contributor-stats",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "private": false,
   "description": "CLI to compute contributor and repository statistics from a Git repository (commits, lines added/deleted, frequency, heatmap, bus-factor), with filters and multiple output formats.",
   "keywords": [
