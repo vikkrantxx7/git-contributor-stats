@@ -3,7 +3,7 @@ import { parseGitLog } from './parser';
 describe('parseGitLog', () => {
   it('should return empty array for empty stdout', () => {
     expect(parseGitLog('')).toEqual([]);
-    expect(parseGitLog(undefined)).toEqual([]);
+    expect(parseGitLog()).toEqual([]);
   });
 
   it('should parse a single commit with file changes', () => {

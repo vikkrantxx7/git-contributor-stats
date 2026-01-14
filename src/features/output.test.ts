@@ -42,7 +42,7 @@ function makeFinal(): ContributorStatsResult {
       byChanges: alice
     },
     commitFrequency: { monthly: { '2025-11': 5 }, weekly: {} },
-    heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+    heatmap: Array.from({ length: 7 }, () => new Array(24).fill(0)),
     heatmapContributors: {}
   };
 }

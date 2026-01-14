@@ -6,6 +6,7 @@ import { generateReports } from './reports';
 describe('generateReports', () => {
   it('should generate CSV, Markdown, and HTML reports', async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'reports-test-'));
+    const name = 'name' as const;
     const final = {
       topContributors: [
         {
@@ -36,8 +37,8 @@ describe('generateReports', () => {
       totalLines: 100,
       busFactor: { busFactor: 1, candidates: [], filesSingleOwner: [] },
       basic: {
-        groupBy: 'name' as 'name',
-        labelBy: 'name' as 'name',
+        groupBy: name,
+        labelBy: name,
         meta: { contributors: 2, commits: 8, additions: 17, deletions: 5 }
       },
       meta: {
@@ -100,10 +101,12 @@ describe('generateReports', () => {
         }
       },
       commitFrequency: { monthly: { '2025-11': 8 }, weekly: {} },
-      heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+      heatmap: Array.from({ length: 7 }, () => new Array(24).fill(0)),
       heatmapContributors: {}
     };
+
     await generateReports(final, { outDir: tmpDir });
+
     expect(fs.existsSync(path.join(tmpDir, 'contributors.csv'))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, 'report.md'))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, 'report.html'))).toBe(true);
@@ -150,7 +153,9 @@ describe('generateReports', () => {
       topContributors: [],
       busFactor: { busFactor: 1, candidates: [] }
     };
+
     await generateReports(final, { outDir: tmpDir });
+
     expect(fs.existsSync(path.join(tmpDir, 'contributors.csv'))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, 'report.md'))).toBe(true);
     expect(fs.existsSync(path.join(tmpDir, 'report.html'))).toBe(true);
@@ -179,6 +184,7 @@ describe('generateReports', () => {
 
 function getMinimalFinal() {
   const topFiles = [{ filename: 'file1.js', changes: 7, added: 5, deleted: 2 }];
+  const name = 'name' as const;
   const contributor = {
     name: 'Alice',
     email: 'alice@example.com',
@@ -198,8 +204,8 @@ function getMinimalFinal() {
     totalLines: 100,
     busFactor: { busFactor: 1, candidates: [] },
     basic: {
-      groupBy: 'name' as 'name',
-      labelBy: 'name' as 'name',
+      groupBy: name,
+      labelBy: name,
       meta: { contributors: 1, commits: 5, additions: 10, deletions: 3 }
     },
     meta: {
@@ -217,7 +223,7 @@ function getMinimalFinal() {
       byChanges: topStatsEntry
     },
     commitFrequency: { monthly: { '2025-11': 5 }, weekly: {} },
-    heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+    heatmap: Array.from({ length: 7 }, () => new Array(24).fill(0)),
     heatmapContributors: {}
   };
 }

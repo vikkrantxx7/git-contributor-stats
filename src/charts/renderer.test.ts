@@ -56,7 +56,7 @@ describe('renderHeatmapImage', () => {
     const { renderHeatmapImage } = await import('./renderer');
     await withTmpDir(async (tmpDir) => {
       const filePath = path.join(tmpDir, 'heatmap.svg');
-      const heatmap = Array.from({ length: 7 }, () => Array(24).fill(0));
+      const heatmap = Array.from({ length: 7 }, () => new Array(24).fill(0));
       heatmap[0][0] = 5;
       await renderHeatmapImage('svg', heatmap, filePath, { width: 400, height: 200 });
       const content = fs.readFileSync(filePath, 'utf8');
@@ -168,7 +168,7 @@ describe('renderer failure and branch coverage', () => {
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chart-test-'));
       const outPath = path.join(tmpDir, 'heatmap.png');
 
-      const heatmap = Array.from({ length: 7 }, () => Array(24).fill(0));
+      const heatmap = Array.from({ length: 7 }, () => new Array(24).fill(0));
       heatmap[0][0] = 0;
       heatmap[0][1] = 5;
 
@@ -188,6 +188,28 @@ describe('renderer failure and branch coverage', () => {
     }
   });
 });
+
+async function expectSvgFallbackForPngBarChart(setupCanvasMock: () => void) {
+  vi.resetModules();
+
+  vi.doMock('chart.js', () => ({ registerables: [] }));
+  setupCanvasMock();
+
+  await withWriteSpy(async (writes) => {
+    const { renderBarChartImage } = await import('./renderer');
+    await withTmpDir(async (tmpDir) => {
+      const outPath = path.join(tmpDir, 'bar.png');
+
+      await renderBarChartImage('png', 'Bar', ['A'], [1], outPath, { verbose: false });
+
+      expect(writes.some((w) => w.filePath === outPath && w.kind === 'string')).toBe(true);
+    });
+  });
+
+  vi.doUnmock('chartjs-node-canvas');
+  vi.doUnmock('chart.js');
+  vi.resetModules();
+}
 
 describe('renderer PNG branches (mocked)', () => {
   it('should render a PNG bar chart when chartjs-node-canvas is available', async () => {
@@ -231,28 +253,6 @@ describe('renderer PNG branches (mocked)', () => {
       vi.resetModules();
     }
   });
-
-  async function expectSvgFallbackForPngBarChart(setupCanvasMock: () => void) {
-    vi.resetModules();
-
-    vi.doMock('chart.js', () => ({ registerables: [] }));
-    setupCanvasMock();
-
-    await withWriteSpy(async (writes) => {
-      const { renderBarChartImage } = await import('./renderer');
-      await withTmpDir(async (tmpDir) => {
-        const outPath = path.join(tmpDir, 'bar.png');
-
-        await renderBarChartImage('png', 'Bar', ['A'], [1], outPath, { verbose: false });
-
-        expect(writes.some((w) => w.filePath === outPath && w.kind === 'string')).toBe(true);
-      });
-    });
-
-    vi.doUnmock('chartjs-node-canvas');
-    vi.doUnmock('chart.js');
-    vi.resetModules();
-  }
 
   it('should fall back to SVG if PNG bar chart rendering throws', async () => {
     await expectSvgFallbackForPngBarChart(() => {
@@ -379,7 +379,7 @@ describe('renderer internal branches (registration + Math.min/maxVal)', () => {
       const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'chart-test-'));
       const outPath = path.join(tmpDir, 'heatmap.png');
 
-      const heatmap = Array.from({ length: 7 }, () => Array(24).fill(0));
+      const heatmap = Array.from({ length: 7 }, () => new Array(24).fill(0));
       // Row max will be 1 (because all zeros) => maxVal=Math.max(1, Math.max(...row)) => 1
       // Set a value > 1 to force val/maxVal > 1 and clamp to alpha 1.
       heatmap[0][0] = 10;

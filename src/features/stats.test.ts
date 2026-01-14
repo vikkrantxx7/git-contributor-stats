@@ -129,7 +129,7 @@ describe('getContributorStats branch coverage (mocked)', () => {
         ],
         topStats: {},
         commitFrequency: { monthly: {}, weekly: {} },
-        heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+        heatmap: Array.from({ length: 7 }, () => new Array(24).fill(0)),
         heatmapContributors: {},
         busFactor: { busFactor: 0, candidates: [], details: {}, filesSingleOwner: [] }
       })
@@ -200,7 +200,7 @@ describe('getContributorStats branch coverage (mocked)', () => {
         topContributors: [],
         topStats: {},
         commitFrequency: { monthly: {}, weekly: {} },
-        heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+        heatmap: Array.from({ length: 7 }, () => new Array(24).fill(0)),
         heatmapContributors: {},
         busFactor: { busFactor: 0, candidates: [], details: {}, filesSingleOwner: [] }
       })

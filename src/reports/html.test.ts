@@ -22,9 +22,7 @@ describe('generateHTMLReport', () => {
         { file: 'app.ts', owner: 'Bob', changes: 5 }
       ]
     },
-    heatmap: Array(7)
-      .fill(null)
-      .map(() => Array(24).fill(0)),
+    heatmap: new Array(7).fill(null).map(() => new Array(24).fill(0)),
     heatmapContributors: {
       // biome-ignore lint/style/useNamingConvention: test data requires specific key format
       '1-9': { Alice: 3, Bob: 1 },

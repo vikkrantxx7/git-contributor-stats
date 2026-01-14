@@ -22,7 +22,7 @@ describe('generateBarChartSVG', () => {
 
 describe('generateHeatmapSVG', () => {
   it('should generate SVG with day and hour labels', () => {
-    const heatmap = Array.from({ length: 7 }, () => Array(24).fill(0));
+    const heatmap = Array.from({ length: 7 }, () => new Array(24).fill(0));
     heatmap[0][0] = 5;
     const svg = generateHeatmapSVG(heatmap);
     expect(svg).toContain('<svg');

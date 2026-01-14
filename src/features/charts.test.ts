@@ -30,13 +30,15 @@ function emptyTopStats() {
 
 // Use a proper type for topContributors and remove unused chartType param
 function createFinal(topContributors: TopContributor[]) {
+  const name = 'name' as const;
+
   return {
     topContributors,
-    heatmap: Array.from({ length: 7 }, () => Array(24).fill(0)),
+    heatmap: Array.from({ length: 7 }, () => new Array(24).fill(0)),
     busFactor: { busFactor: 1, candidates: [], filesSingleOwner: [] },
     basic: {
-      groupBy: 'name' as 'name',
-      labelBy: 'name' as 'name',
+      groupBy: name,
+      labelBy: name,
       meta: {
         contributors: topContributors.length,
         commits: topContributors.reduce((a, c) => a + c.commits, 0),
