@@ -71,6 +71,42 @@ function minimalReportInput(overrides: Partial<MinimalReportInput> = {}): Minima
   };
 }
 
+function makeSingleAliceData(
+  overrides: Partial<MarkdownData> = {},
+  contributorOverrides: Partial<MarkdownData['topContributors'][number]> = {}
+): MarkdownData {
+  return makeData({
+    topContributors: [
+      makeTopContributor({
+        name: 'Alice',
+        commits: 5,
+        added: 10,
+        deleted: 3,
+        topFiles: [],
+        ...contributorOverrides
+      })
+    ],
+    totalCommits: 5,
+    totalLines: 100,
+    busFactor: { filesSingleOwner: [] },
+    commitFrequency: { monthly: emptyMonthly },
+    ...overrides
+  });
+}
+
+function makeTopStatsWithMissingEntries(
+  overrides: Partial<NonNullable<MarkdownData['topStats']>> = {}
+): NonNullable<MarkdownData['topStats']> {
+  return {
+    byCommits: { name: 'Alice', email: 'a@example.com', commits: 1, added: 0, deleted: 0 },
+    byAdditions: null,
+    byDeletions: undefined,
+    byNet: { name: 'Bob', email: '', commits: 0, added: 10, deleted: 2 },
+    byChanges: undefined,
+    ...overrides
+  };
+}
+
 describe('generateMarkdownReport', () => {
   it('should generate markdown report with repo name and contributors', () => {
     const data = makeData({
@@ -114,37 +150,25 @@ describe('generateMarkdownReport', () => {
   });
 
   it('should skip top stats section if includeTopStats is false', () => {
-    const data = makeData({
-      topContributors: [
-        makeTopContributor({ name: 'Alice', commits: 5, added: 10, deleted: 3, topFiles: [] })
-      ],
-      totalCommits: 5,
-      totalLines: 100,
-      busFactor: { filesSingleOwner: [] },
+    const data = makeSingleAliceData({
       topStats: {
         byCommits: { name: 'Alice', commits: 5 }
-      },
-      commitFrequency: { monthly: emptyMonthly }
+      }
     });
+
     const md = generateMarkdownReport(data, repoPath, { includeTopStats: false });
     expect(md).not.toContain('Most commits');
     expect(md).toContain('Top contributors');
   });
 
   it('should include only selected topStatsMetrics', () => {
-    const data = makeData({
-      topContributors: [
-        makeTopContributor({ name: 'Alice', commits: 5, added: 10, deleted: 3, topFiles: [] })
-      ],
-      totalCommits: 5,
-      totalLines: 100,
-      busFactor: { filesSingleOwner: [] },
+    const data = makeSingleAliceData({
       topStats: {
         byCommits: { name: 'Alice', commits: 5 },
         byAdditions: { name: 'Alice', added: 10 }
-      },
-      commitFrequency: { monthly: emptyMonthly }
+      }
     });
+
     const md = generateMarkdownReport(data, repoPath, {
       includeTopStats: true,
       topStatsMetrics: ['commits']
@@ -208,16 +232,7 @@ describe('generateMarkdownReport', () => {
   });
 
   it('should handle topStats with missing entries', () => {
-    const data = makeData({
-      topContributors: [
-        makeTopContributor({ name: 'Alice', commits: 5, added: 10, deleted: 3, topFiles: [] })
-      ],
-      totalCommits: 5,
-      totalLines: 100,
-      busFactor: { filesSingleOwner: [] },
-      topStats: {},
-      commitFrequency: { monthly: emptyMonthly }
-    });
+    const data = makeSingleAliceData({ topStats: {} });
     const md = generateMarkdownReport(data, repoPath, { includeTopStats: true });
     expect(md).toContain('Top stats');
   });
@@ -267,13 +282,7 @@ describe('generateMarkdownReport additional branch coverage', () => {
         totalCommits: 1,
         totalLines: 10,
         busFactor: {} as MarkdownData['busFactor'],
-        topStats: {
-          byCommits: { name: 'Alice', email: 'a@example.com', commits: 1, added: 0, deleted: 0 },
-          byAdditions: null,
-          byDeletions: undefined,
-          byNet: { name: 'Bob', email: '', commits: 0, added: 10, deleted: 2 },
-          byChanges: undefined
-        },
+        topStats: makeTopStatsWithMissingEntries(),
         commitFrequency: { monthly: { '2026-01': 1 } }
       }) as MarkdownData,
       repoPath,

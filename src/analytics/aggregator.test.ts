@@ -9,6 +9,16 @@ import {
   printTable
 } from './aggregator.ts';
 
+function withConsoleLogSpy(fn: () => void) {
+  const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  try {
+    fn();
+    expect(spy).toHaveBeenCalled();
+  } finally {
+    spy.mockRestore();
+  }
+}
+
 const addSortArr = [
   { additions: 2, commits: 1, changes: 10 },
   { additions: 5, commits: 2, changes: 8 }
@@ -686,19 +696,18 @@ describe('printTable', () => {
       firstCommitDate: '2023-01-01T00:00:00.000Z',
       lastCommitDate: '2023-01-03T00:00:00.000Z'
     };
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printTable(contributors, meta, 'name');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+
+    withConsoleLogSpy(() => {
+      printTable(contributors, meta, 'name');
+    });
   });
 });
 
 describe('printTable edge cases', () => {
   it('should handle empty contributors', () => {
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printTable([], { contributors: 0, commits: 0, additions: 0, deletions: 0 }, 'name');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+    withConsoleLogSpy(() => {
+      printTable([], { contributors: 0, commits: 0, additions: 0, deletions: 0 }, 'name');
+    });
   });
   it('should print with labelBy email', () => {
     const contributors = [
@@ -713,10 +722,10 @@ describe('printTable edge cases', () => {
       }
     ];
     const meta = { contributors: 1, commits: 1, additions: 2, deletions: 3 };
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printTable(contributors, meta, 'email');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+
+    withConsoleLogSpy(() => {
+      printTable(contributors, meta, 'email');
+    });
   });
 
   it('should print table with date range', () => {
@@ -739,10 +748,10 @@ describe('printTable edge cases', () => {
       firstCommitDate: '2023-01-01T00:00:00.000Z',
       lastCommitDate: '2023-12-31T00:00:00.000Z'
     };
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printTable(contributors, meta, 'name');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+
+    withConsoleLogSpy(() => {
+      printTable(contributors, meta, 'name');
+    });
   });
 
   it('should print table without date range when dates are missing', () => {
@@ -763,10 +772,10 @@ describe('printTable edge cases', () => {
       additions: 7,
       deletions: 2
     };
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printTable(contributors, meta, 'name');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+
+    withConsoleLogSpy(() => {
+      printTable(contributors, meta, 'name');
+    });
   });
 
   it('should handle contributors with unknown name', () => {
@@ -782,10 +791,10 @@ describe('printTable edge cases', () => {
       }
     ];
     const meta = { contributors: 1, commits: 1, additions: 2, deletions: 1 };
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printTable(contributors, meta, 'name');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+
+    withConsoleLogSpy(() => {
+      printTable(contributors, meta, 'name');
+    });
   });
 
   it('should handle contributors with unknown key', () => {
@@ -801,10 +810,10 @@ describe('printTable edge cases', () => {
       }
     ];
     const meta = { contributors: 1, commits: 1, additions: 2, deletions: 1 };
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printTable(contributors, meta, 'email');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+
+    withConsoleLogSpy(() => {
+      printTable(contributors, meta, 'email');
+    });
   });
 });
 
@@ -830,10 +839,10 @@ describe('printCSV', () => {
         changes: 3
       }
     ];
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printCSV(contributors, 'name');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+
+    withConsoleLogSpy(() => {
+      printCSV(contributors, 'name');
+    });
   });
 
   it('should print CSV with labelBy email', () => {
@@ -848,17 +857,16 @@ describe('printCSV', () => {
         changes: 15
       }
     ];
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printCSV(contributors, 'email');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+
+    withConsoleLogSpy(() => {
+      printCSV(contributors, 'email');
+    });
   });
 
   it('should handle empty contributors in CSV', () => {
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printCSV([], 'name');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+    withConsoleLogSpy(() => {
+      printCSV([], 'name');
+    });
   });
 
   it('should handle contributors with empty name in CSV', () => {
@@ -873,10 +881,10 @@ describe('printCSV', () => {
         changes: 3
       }
     ];
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printCSV(contributors, 'name');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+
+    withConsoleLogSpy(() => {
+      printCSV(contributors, 'name');
+    });
   });
 
   it('should handle contributors with empty key in CSV', () => {
@@ -891,9 +899,9 @@ describe('printCSV', () => {
         changes: 3
       }
     ];
-    const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    printCSV(contributors, 'email');
-    expect(spy).toHaveBeenCalled();
-    spy.mockRestore();
+
+    withConsoleLogSpy(() => {
+      printCSV(contributors, 'email');
+    });
   });
 });
