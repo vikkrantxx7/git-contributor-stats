@@ -114,6 +114,20 @@ function makeContributor(
   };
 }
 
+function expectChartFiles(tmpDir: string, ext: string, shouldExist = true) {
+  const exists = (file: string) => fs.existsSync(path.join(tmpDir, file));
+
+  if (shouldExist) {
+    expect(exists(`top-commits.${ext}`)).toBe(true);
+    expect(exists(`top-net.${ext}`)).toBe(true);
+    expect(exists(`heatmap.${ext}`)).toBe(true);
+  } else {
+    expect(exists(`top-commits.${ext}`)).toBe(false);
+    expect(exists(`top-net.${ext}`)).toBe(false);
+    expect(exists(`heatmap.${ext}`)).toBe(false);
+  }
+}
+
 describe('generateCharts', () => {
   it('should generate SVG charts for top contributors', async () => {
     const final = createFinal([
@@ -123,9 +137,7 @@ describe('generateCharts', () => {
 
     await withTmpDir(async (tmpDir) => {
       await generateCharts(final, { charts: true, chartsDir: tmpDir, chartFormat: 'svg' });
-      expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
+      expectChartFiles(tmpDir, 'svg', true);
     });
   });
 
@@ -148,9 +160,7 @@ describe('generateCharts', () => {
 
     await withTmpDir(async (tmpDir) => {
       await generateCharts(final, { charts: true, chartsDir: tmpDir, chartFormat: 'png' });
-      expect(fs.existsSync(path.join(tmpDir, 'top-commits.png'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'top-net.png'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'heatmap.png'))).toBe(true);
+      expectChartFiles(tmpDir, 'png', true);
     });
   }, 30000);
 
@@ -162,12 +172,8 @@ describe('generateCharts', () => {
 
     await withTmpDir(async (tmpDir) => {
       await generateCharts(final, { charts: true, chartsDir: tmpDir, chartFormat: 'both' });
-      expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'top-commits.png'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'top-net.png'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'heatmap.png'))).toBe(true);
+      expectChartFiles(tmpDir, 'svg', true);
+      expectChartFiles(tmpDir, 'png', true);
     });
   });
 
@@ -175,9 +181,7 @@ describe('generateCharts', () => {
     const final = createFinal([]);
     await withTmpDir(async (tmpDir) => {
       await generateCharts(final, { charts: false, chartsDir: tmpDir, chartFormat: 'svg' });
-      expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(false);
-      expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(false);
-      expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(false);
+      expectChartFiles(tmpDir, 'svg', false);
     });
   });
 });
@@ -187,9 +191,7 @@ describe('generateCharts additional branch coverage', () => {
     await withTmpDir(async (tmpDir) => {
       const { generateCharts } = await import('./charts');
       await generateCharts(createFinal([]), { charts: true, chartsDir: tmpDir });
-      expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
+      expectChartFiles(tmpDir, 'svg', true);
     });
   });
 
@@ -202,9 +204,7 @@ describe('generateCharts additional branch coverage', () => {
       });
 
       // ensureFallbackSVGs should write missing SVGs
-      expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
+      expectChartFiles(tmpDir, 'svg', true);
     });
   });
 
@@ -241,9 +241,7 @@ describe('generateCharts additional branch coverage', () => {
         chartFormat: 'JPG'
       });
 
-      expect(fs.existsSync(path.join(tmpDir, 'top-commits.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'top-net.svg'))).toBe(true);
-      expect(fs.existsSync(path.join(tmpDir, 'heatmap.svg'))).toBe(true);
+      expectChartFiles(tmpDir, 'svg', true);
       expect(fs.existsSync(path.join(tmpDir, 'top-commits.jpg'))).toBe(false);
     });
   });
