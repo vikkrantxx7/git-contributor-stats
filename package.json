@@ -81,7 +81,7 @@
     "lint:fix": "node scripts/lintFix.js",
     "prepare": "lefthook install",
     "prepublishOnly": "npm run test",
-    "release": "npm run build && changeset publish --provenance",
+    "release": "npm run build && changeset publish",
     "report": "node ./dist/cli.mjs --out-dir reports --md reports/report.md --html reports/report.html --no-count-lines --charts",
     "sort": "sort-package-json",
     "start": "node ./dist/cli.mjs",
